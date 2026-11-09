@@ -15,7 +15,7 @@
 - **三路数据源**：`dsh-cost-meter` 本地用量估算（默认优先，适配订阅/零钱包账号）→ 桌面登录账号钱包（`ctx.deepseekAccount`）→ 开放平台 `/user/balance`（API Key）；`manual` 用于联调。
 - **静态 / 动态可选**：`auto` / `static` / `dynamic`；尊重 `prefers-reduced-motion`，窗口不可见时暂停视频。
 - **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
-- **两种显示模式**：`frame`（相框，默认，最安全）与 `full`（沉浸，半透明面板）。
+- **两种显示模式**：`full`（默认，壁纸铺满整个窗口、界面半透明）与 `frame`（相框，仅在四周露出壁纸，最保守）。
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
 - **自定义素材包**：`$DSH_HOME/spend-wallpaper/packs/<id>/manifest.json`，用户包可覆盖同名内置包。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
@@ -47,7 +47,7 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
   config:
     source: manual          # 先用 manual 联调
     manualSpend: "0.40"     # 假装最近 1 小时花了 ¥0.40
-    mode: frame             # frame（相框）/ full（沉浸）
+    mode: full              # full（默认，铺满）/ frame（相框）
     media: auto             # auto / static / dynamic
     thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
 ```
@@ -62,11 +62,11 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
 | `windowMinutes` | `60` | 滚动窗口（5–180） |
 | `sampleSeconds` | `180` | 采样间隔（60–600） |
 | `direction` | `poor` | `poor` / `rich` |
-| `mode` | `frame` | `frame` / `full` |
+| `mode` | `full` | `full`（铺满）/ `frame`（相框） |
 | `media` | `auto` | `auto` / `static` / `dynamic` |
 | `pack` | `default` | 素材包 id |
-| `scrim` / `dim` / `blur` | `.28` / `.08` / `0` | 可读性与氛围 |
-| `surfaceOpacity` | `.7` | `full` 模式面板不透明度 |
+| `scrim` / `dim` / `blur` | `.28` / `.08` / `0` | 可读性、氛围与壁纸模糊 |
+| `surfaceOpacity` | `.55` | `full` 模式面板不透明度（越低壁纸越明显） |
 | `inset` / `radius` | `16` / `16` | `frame` 模式相框 |
 | `transitionMs` | `600` | 交叉淡入时长 |
 | `hysteresis` | `.25` | 越过阈值 25% 才换档 |

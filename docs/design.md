@@ -31,7 +31,7 @@
 │  StatePoller(20s) ──► WallpaperLayer (#dswp-root, fixed, z-index:-1)             │
 │                          ├─ <img> 静态 / <video> 动态（交叉淡入）                  │
 │                          └─ scrim 渐变 + dim                                      │
-│  data-dswp-mode: frame（相框）/ full（面板半透明 token）                           │
+│  data-dswp-mode: full（默认，铺满）/ frame（相框）                                │
 └───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -288,21 +288,23 @@ Client 层：
 
 ```css
 #dswp-root { position: fixed; inset: 0; z-index: -1; pointer-events: none; contain: strict; }
+#dswp-root .dswp-media { position: absolute; inset: 0; overflow: hidden;
+  filter: blur(var(--dswp-blur, 0px)); transform: scale(var(--dswp-scale, 1.02)); }
 #dswp-root .dswp-frame { position: absolute; inset: 0; object-fit: cover; opacity: 0; transition: opacity 600ms; }
 #dswp-root .dswp-frame[data-dswp-active] { opacity: 1; }
 
-/* frame：相框，不动颜色 token */
-html[data-dswp-mode="frame"] body { background: transparent !important; box-sizing: border-box; padding: var(--dswp-inset); }
-html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp-radius); overflow: hidden; }
-
-/* full：面板半透明，token 由 JS 按当前浅/深主题计算 */
+/* full（默认）：壁纸铺满，面板半透明，token 由 JS 按当前浅/深主题计算 */
 html[data-dswp-mode="full"] body {
   --dsw-alias-bg-base: var(--dswp-surface) !important;
   --dsw-specific-sidebar-fill: var(--dswp-sidebar) !important;
 }
+
+/* frame：相框，不动颜色 token，只在四周露出壁纸 */
+html[data-dswp-mode="frame"] body { background: transparent !important; box-sizing: border-box; padding: var(--dswp-inset); }
+html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp-radius); overflow: hidden; }
 ```
 
-`full` 模式下 `--dswp-surface` / `--dswp-sidebar` 由 client 用 `rgba(深/浅色, surfaceOpacity)` 计算并写到 `<html>`；浅/深判断读 `body[data-ds-dark-theme]`，主题切换由 `MutationObserver` 重新计算。scrim 用同样方式按 `scrim + dim` 计算。
+`full` 模式下 `--dswp-surface` / `--dswp-sidebar` 由 client 用 `rgba(深/浅色, surfaceOpacity)` 计算并写到 `<html>`；浅/深判断读 `body[data-ds-dark-theme]`，主题切换由 `MutationObserver` 重新计算。scrim 用同样方式按 `scrim + dim` 计算；`blur` 作用在壁纸层媒体上（`full` 下更好读）。
 
 必须遵守：
 
@@ -481,9 +483,9 @@ bin/dsh-spend-wallpaper.mjs
 | 档位 | `hysteresis` | 0.25 | 迟滞比例 |
 | 档位 | `minDwellSeconds` | 600 | 最短驻留 |
 | 素材 | `pack`, `media` | default, auto | 素材包 / static / dynamic / auto |
-| 渲染 | `mode` | frame | frame / full |
+| 渲染 | `mode` | full | full（铺满）/ frame（相框） |
 | 渲染 | `scrim`, `dim`, `blur` | .28 / .08 / 0 | 可读性与氛围 |
-| 渲染 | `surfaceOpacity` | .7 | full 模式面板不透明度 |
+| 渲染 | `surfaceOpacity` | .55 | full 模式面板不透明度 |
 | 渲染 | `inset`, `radius` | 16 / 16 | frame 模式相框 |
 | 其它 | `lockedTier`, `manualSpend` | "" / "0" | 锁定档位 / manual 源 |
 
@@ -581,7 +583,7 @@ bin/dsh-spend-wallpaper.mjs
 ## 附录 D：M1 待验证假设
 
 1. Electron（Desktop 宿主）里 file:// 页面的 `/plugins/...` fetch 是否经 IPC 桥接（Web 模式已验证；Desktop 待验证）。
-2. `full` 模式面板半透明在浅/深主题下的可读性；可能需要提高 `surfaceOpacity` 默认值。
+2. `full` 模式面板半透明在浅/深主题下的可读性；默认 `surfaceOpacity` 已从 0.7 调到 0.55（壁纸更明显），必要时再调。
 3. 视频随 `<video>` 预加载/循环的耗电与首帧时间。
 4. 自绘设置页在 `settings.section` 与 `plugins.bundle.config` 两个 slot 的注册与卸载清理。
 

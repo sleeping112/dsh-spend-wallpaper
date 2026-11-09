@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-10
+
+### Changed
+
+- Default display mode is now `full`: the wallpaper covers the whole window and
+  panels are semi-transparent (`surfaceOpacity` default 0.55), instead of only
+  showing around a `frame` border. `frame` remains available as an option.
+- The browser half now applies the configured `blur` to the wallpaper media
+  layer (with a slight overscan scale so blurred edges never show), which keeps
+  text readable when the wallpaper is busy.
+
 ## [0.3.0] - 2026-11-10
 
 ### Added

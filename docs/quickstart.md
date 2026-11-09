@@ -25,7 +25,7 @@
 
 如果窗口背景没有立刻变化：先按 `Ctrl+R` 刷新页面；仍然没有就完全退出并重启 DSH（部分 profile 没开 HMR 时需要重启）。
 
-> 装好后不用改任何配置，**默认就会显示第 0 档「无波」壁纸**（相框模式），四周能看到深蓝色的海面。
+> 装好后不用改任何配置，**默认就会显示第 0 档「无波」壁纸**（`full` 模式：壁纸铺满整个窗口，界面面板半透明）。
 
 ---
 
@@ -73,7 +73,7 @@
 
 - **自动切换**：默认就是自动。阈值是 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，每 3 分钟采样一次，档位变化有「迟滞 + 最短驻留 10 分钟」防抖。
 - **切静态/动态**：`media: auto`（默认，有视频用视频、开了减少动效用静态）/ `static` / `dynamic`。
-- **显示模式**：`mode: frame`（默认，四周相框）或 `mode: full`（壁纸铺满、界面半透明；偏实验性，先试再长期用）。
+- **显示模式**：`mode: full`（默认，壁纸铺满、界面半透明）或 `mode: frame`（相框，只在四周露出壁纸）。`full` 下觉得字不够清楚就调 `surfaceOpacity` / `scrim`。
 - **方向**：`direction: poor`（默认，花得越多越惨）或 `rich`（花得越多越豪华）。
 - **不想被换**：`enabled: false` 关掉，或 `lockedTier: "calm"` 锁在某一档。
 - **全屏/终端面板**：壁纸在应用背景层，终端、菜单等面板不会被替换；`frame` 模式下终端面板之外仍能看到壁纸。
@@ -138,7 +138,7 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 | 一直是第 0 档、不随消耗变化 | 看 `state.json`：`samples` 是否增长、`source` 是哪个；账号钱包为 0 或订阅制时 `auto` 会用 `cost-meter`（需先安装它）。都没有就配 `DEEPSEEK_API_KEY` |
 | 想用钱包而不是本地估算 | 配置 `source: account`；钱包余额必须大于 0，否则无法用差分 |
 | 变化太慢 | 默认 3 分钟采样 + 10 分钟驻留；临时联调可把 `sampleSeconds`/`minDwellSeconds` 调小（最小 60） |
-| 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.7） |
+| 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.55），或加一点 `blur` |
 | 动态视频不动 | 系统开了「减少动态效果」时按设计降级为静态；可把 `media` 改成 `dynamic` 验证，或换 `static` |
 | 想彻底移除 | 插件页找到 `dsh-spend-wallpaper` → **卸载**，然后重启 DSH |
 
