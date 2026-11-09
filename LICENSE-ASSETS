@@ -1,0 +1,11 @@
+Built-in wallpaper artwork — CC0 1.0 Universal (public domain dedication)
+
+The media files under `lib/assets/packs/` (WebP stills and WebM loops) are
+generated procedurally by `scripts/gen-assets.py` from gradients, sine waves
+and polygon shapes. No third-party photographs, fonts, or video footage are
+used, so the generated output is released under CC0 1.0:
+
+  https://creativecommons.org/publicdomain/zero/1.0/
+
+You may copy, modify, distribute and use these assets for any purpose without
+attribution. The plugin source code itself remains MIT-licensed (see LICENSE).

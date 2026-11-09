@@ -1,0 +1,6 @@
+# dsh-spend-wallpaper bundle patch: one host row over the web/desktop profile.
+# The row name resolves from the profile's own node_modules, where
+# `dsh plugin --profile <profile> add link:<this-dir>` installed this package.
+- insert:
+    - id: spend-wallpaper
+      name: dsh-spend-wallpaper

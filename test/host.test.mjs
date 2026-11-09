@@ -1,0 +1,183 @@
+/**
+ * Host-side unit tests for the pure modules (no DSH runtime needed).
+ *
+ * Run with: node --test
+ */
+
+import assert from 'node:assert/strict'
+import path from 'node:path'
+import test from 'node:test'
+import { fileURLToPath } from 'node:url'
+
+import { parseAmount, formatAmount, cmpAmount, mulRatio } from '../lib/money.js'
+import { resolveTier, mapPackIndex, parseTierTable, nextThreshold } from '../lib/tiers.js'
+import { appendSample, trimSamples, windowSpend } from '../lib/window.js'
+import { loadPacks, resolveAsset, resolvePack, validateManifest } from '../lib/packs.js'
+import { normalizeApiBase } from '../lib/sources.js'
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+// ------------------------------------------------------------------ money
+
+test('parseAmount handles decimals and negatives', () => {
+  assert.equal(parseAmount('0'), 0)
+  assert.equal(parseAmount('0.05'), 50_000)
+  assert.equal(parseAmount('1.5'), 1_500_000)
+  assert.equal(parseAmount('-2.25'), -2_250_000)
+  assert.equal(parseAmount(0.3), 300_000)
+  assert.equal(parseAmount('6.000000'), 6_000_000)
+})
+
+test('parseAmount rejects malformed input', () => {
+  for (const value of ['', 'abc', '1.2.3', '1e3', '--1', '1.2345678']) {
+    assert.throws(() => parseAmount(value), /invalid amount/)
+  }
+})
+
+test('formatAmount round-trips', () => {
+  for (const value of ['0', '0.05', '1.5', '6', '123.456789', '-2.25']) {
+    assert.equal(formatAmount(parseAmount(value)), value)
+  }
+})
+
+test('cmpAmount and mulRatio are exact', () => {
+  assert.equal(cmpAmount(parseAmount('0.3'), parseAmount('0.30')), 0)
+  assert.equal(cmpAmount(parseAmount('0.05'), parseAmount('0.3')), -1)
+  assert.equal(mulRatio(parseAmount('6'), 0.25), 1_500_000)
+})
+
+// ------------------------------------------------------------------ tiers
+
+const TIERS = parseTierTable(['0', '0.05', '0.30', '1.50', '6.00'])
+
+test('tier table is strict and starts at 0', () => {
+  assert.deepEqual(TIERS, [0, 50_000, 300_000, 1_500_000, 6_000_000])
+  assert.throws(() => parseTierTable(['0.05', '1']), /thresholds\[0\]/)
+  assert.throws(() => parseTierTable(['0', '1', '1']), /strictly ascending/)
+})
+
+test('resolveTier maps spend to tier', () => {
+  const base = { thresholdsMicro: TIERS, currentIndex: 0, changedAt: 0, now: 0, hysteresis: 0, minDwellMs: 0 }
+  assert.equal(resolveTier({ ...base, spendMicro: 0 }).index, 0)
+  assert.equal(resolveTier({ ...base, spendMicro: 40_000 }).index, 0)
+  assert.equal(resolveTier({ ...base, spendMicro: 60_000 }).index, 1)
+  assert.equal(resolveTier({ ...base, spendMicro: 2_000_000 }).index, 3)
+  assert.equal(resolveTier({ ...base, spendMicro: 9_000_000 }).index, 4)
+  assert.equal(resolveTier({ ...base, spendMicro: null }).index, 0)
+})
+
+test('resolveTier keeps the current tier inside the hysteresis band', () => {
+  const base = { thresholdsMicro: TIERS, currentIndex: 1, changedAt: 0, now: 0, hysteresis: 0.25, minDwellMs: 0 }
+  // 0.30 boundary needs +25% overshoot (0.375) to move up.
+  assert.equal(resolveTier({ ...base, spendMicro: parseAmount('0.31') }).index, 1)
+  assert.equal(resolveTier({ ...base, spendMicro: parseAmount('0.38') }).index, 2)
+  // Dropping below 0.05 needs -25% of the boundary (0.0125): 0.04 is inside the band.
+  assert.equal(resolveTier({ ...base, spendMicro: parseAmount('0.04') }).index, 1)
+  assert.equal(resolveTier({ ...base, spendMicro: parseAmount('0.02') }).index, 0)
+})
+
+test('resolveTier defers a change until the dwell time elapsed', () => {
+  const base = { thresholdsMicro: TIERS, currentIndex: 0, changedAt: 0, now: 100, hysteresis: 0, minDwellMs: 1000 }
+  const result = resolveTier({ ...base, spendMicro: 9_000_000 })
+  assert.equal(result.index, 0)
+  assert.equal(result.pendingIndex, 4)
+  const later = resolveTier({ ...base, now: 1001, spendMicro: 9_000_000 })
+  assert.equal(later.index, 4)
+})
+
+test('mapPackIndex reverses for rich direction', () => {
+  assert.equal(mapPackIndex(0, 5, 'poor', 'poor'), 0)
+  assert.equal(mapPackIndex(4, 5, 'poor', 'poor'), 4)
+  assert.equal(mapPackIndex(0, 5, 'poor', 'rich'), 4)
+  assert.equal(mapPackIndex(4, 5, 'poor', 'rich'), 0)
+  assert.equal(mapPackIndex(3, 5, 'poor', 'poor'), 3)
+})
+
+test('nextThreshold returns null on the top tier', () => {
+  assert.equal(nextThreshold(TIERS, 0), 50_000)
+  assert.equal(nextThreshold(TIERS, 4), null)
+})
+
+// ------------------------------------------------------------------ window
+
+function samples(entries) {
+  return entries.map(([seconds, amount]) => ({ t: seconds * 1000, totalMicro: parseAmount(amount), currency: 'CNY' }))
+}
+
+test('windowSpend is null while warming up', () => {
+  assert.equal(windowSpend({ samples: [], now: 0, windowMs: 60_000 }).reason, 'warming')
+  const two = samples([[0, '10'], [60, '9']])
+  assert.equal(windowSpend({ samples: two, now: 60_000, windowMs: 60_000 }).spendMicro, parseAmount('1'))
+})
+
+test('windowSpend requires most of the window to be covered', () => {
+  const short = samples([[0, '10'], [10, '9']])
+  assert.equal(windowSpend({ samples: short, now: 20_000, windowMs: 60_000 }).reason, 'warming')
+})
+
+test('windowSpend computes the delta over exactly one window', () => {
+  const data = samples([[0, '10'], [1800, '9'], [3600, '8']])
+  const result = windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 })
+  assert.equal(result.spendMicro, parseAmount('2'))
+  assert.equal(result.reason, 'ok')
+})
+
+test('windowSpend clamps a top-up to zero', () => {
+  const data = samples([[0, '10'], [3600, '12']])
+  const result = windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 })
+  assert.equal(result.spendMicro, 0)
+  assert.equal(result.reason, 'reset')
+})
+
+test('windowSpend restarts on currency change', () => {
+  const data = [
+    { t: 0, totalMicro: parseAmount('10'), currency: 'CNY' },
+    { t: 3600_000, totalMicro: parseAmount('9'), currency: 'USD' },
+  ]
+  assert.equal(windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 }).reason, 'warming')
+})
+
+test('appendSample keeps samples monotonic and trims', () => {
+  const data = []
+  appendSample(data, { t: 1000, totalMicro: 1, currency: 'CNY' })
+  appendSample(data, { t: 1000, totalMicro: 99, currency: 'CNY' })
+  appendSample(data, { t: 500, totalMicro: 5, currency: 'CNY' })
+  assert.equal(data.length, 1)
+  appendSample(data, { t: 2000, totalMicro: 2, currency: 'CNY' })
+  appendSample(data, { t: 3000, totalMicro: 3, currency: 'CNY' })
+  trimSamples(data, 2500)
+  assert.deepEqual(data.map((sample) => sample.t), [2000, 3000])
+})
+
+// ------------------------------------------------------------------ packs
+
+test('built-in pack validates and resolves assets', () => {
+  const builtin = path.join(root, 'lib', 'assets', 'packs')
+  const { packs, diagnostics } = loadPacks({ builtinDir: builtin, userDir: path.join(root, 'does-not-exist') })
+  assert.equal(diagnostics.length, 0, JSON.stringify(diagnostics))
+  assert.equal(packs.has('default'), true)
+  const pack = resolvePack(packs, 'missing-pack')
+  assert.equal(pack.id, 'default')
+  assert.equal(pack.manifest.tiers.length, 5)
+  const asset = resolveAsset(pack, '0-calm.webp')
+  assert.ok(asset, 'static asset must exist')
+  assert.equal(asset.contentType, 'image/webp')
+  assert.equal(resolveAsset(pack, '../secret.webp'), null)
+  assert.equal(resolveAsset(pack, 'evil.exe'), null)
+})
+
+test('manifest validation rejects incomplete packs', () => {
+  assert.throws(() => validateManifest({ schema: 1, id: 'x', tiers: [] }, 'x'), /tiers/)
+  assert.throws(
+    () => validateManifest({ schema: 1, id: 'y', tiers: [{ id: 'a', static: 'a.webp', dynamic: { type: 'gif' } }] }, 'y'),
+    /dynamic\.type/,
+  )
+})
+
+test('normalizeApiBase only accepts the official origin', () => {
+  assert.equal(normalizeApiBase('https://api.deepseek.com'), 'https://api.deepseek.com')
+  assert.equal(normalizeApiBase('https://api.deepseek.com/v1'), 'https://api.deepseek.com')
+  assert.equal(normalizeApiBase('http://api.deepseek.com'), null)
+  assert.equal(normalizeApiBase('https://evil.example.com'), null)
+  assert.equal(normalizeApiBase('not a url'), null)
+})

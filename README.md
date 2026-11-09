@@ -1,0 +1,150 @@
+# dsh-spend-wallpaper · 余额壁纸
+
+按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置一套程序化生成的「深海情绪」素材（5 档 × 静态 WebP + 动态 WebM 循环视频），也支持自定义素材包。
+
+- 设计文档：[docs/design.md](docs/design.md)
+- 素材包作者指南：[docs/packs.md](docs/packs.md)
+- 变更记录：[CHANGELOG.md](CHANGELOG.md)
+- 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md) · 安全说明：[SECURITY.md](SECURITY.md)
+
+## 特性
+
+- **滚动 1 小时消耗**：`余额(now) − 余额(now − 60min)`，不是"今天花了多少"。
+- **两路余额来源**：桌面登录账号钱包（`ctx.deepseekAccount`）优先，其次开放平台 `/user/balance`（API Key）；`manual` 用于联调。
+- **静态 / 动态可选**：`auto` / `static` / `dynamic`；尊重 `prefers-reduced-motion`，窗口不可见时暂停视频。
+- **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
+- **两种显示模式**：`frame`（相框，默认，最安全）与 `full`（沉浸，半透明面板）。
+- **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
+- **自定义素材包**：`$DSH_HOME/spend-wallpaper/packs/<id>/manifest.json`，用户包可覆盖同名内置包。
+- **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
+
+## 安装
+
+插件通过 profile 的 patch 层插入一行 host 插件，浏览器半边由 `dsh.client` 声明自动提供。
+
+```sh
+# Web profile（可替换为 desktop 等 profile 名）
+dsh plugin --profile web add link:E:/workspace/dsh-spend-wallpaper
+```
+
+Desktop profile 用插件管理器（设置 → 插件）安装同一个 `link:` 路径，或使用 Desktop 内置命令运行时执行同样的 `dsh plugin --profile desktop add link:...`。
+
+安装后重启 profile（或等 HMR 重载）即可生效。
+
+## 配置
+
+所有字段都是 Cordis `Config` 的 volatile 字段。M0 阶段通过 profile 的 `cordis.patch.yml` 配置（改完重启 profile，或启用 HMR 时等待重载）；也可以使用 [examples/profile-patch.yml](examples/profile-patch.yml) 作为 overlay 传给启动器：
+
+```sh
+dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patch.yml
+```
+
+```yaml
+- id: spend-wallpaper
+  config:
+    source: manual          # 先用 manual 联调
+    manualSpend: "0.40"     # 假装最近 1 小时花了 ¥0.40
+    mode: frame             # frame（相框）/ full（沉浸）
+    media: auto             # auto / static / dynamic
+    thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
+```
+
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `enabled` | `true` | 总开关 |
+| `source` | `auto` | `auto` / `account` / `api` / `manual`（`cost-meter` 保留，等同 `auto`） |
+| `currency` | `CNY` | 显示与阈值币种 |
+| `apiBase` | `https://api.deepseek.com` | 仅允许官方域名 |
+| `apiKeyEnv` | `DEEPSEEK_API_KEY` | 经 `ctx.credentials` 或环境变量解析 |
+| `windowMinutes` | `60` | 滚动窗口（5–180） |
+| `sampleSeconds` | `180` | 采样间隔（60–600） |
+| `direction` | `poor` | `poor` / `rich` |
+| `mode` | `frame` | `frame` / `full` |
+| `media` | `auto` | `auto` / `static` / `dynamic` |
+| `pack` | `default` | 素材包 id |
+| `scrim` / `dim` / `blur` | `.28` / `.08` / `0` | 可读性与氛围 |
+| `surfaceOpacity` | `.7` | `full` 模式面板不透明度 |
+| `inset` / `radius` | `16` / `16` | `frame` 模式相框 |
+| `transitionMs` | `600` | 交叉淡入时长 |
+| `hysteresis` | `.25` | 越过阈值 25% 才换档 |
+| `minDwellSeconds` | `600` | 最短驻留时间 |
+| `thresholds` | `["0","0.05","0.30","1.50","6.00"]` | 五档阈值（字符串，严格递增） |
+| `manualSpend` | `"0"` | `source=manual` 时的固定消耗 |
+| `lockedTier` | `""` | 锁定档位 id 或序号，空 = 自动 |
+
+## 素材包
+
+```
+lib/assets/packs/default/           # 内置（用户包同名覆盖）
+$DSH_HOME/spend-wallpaper/packs/<id>/
+├─ manifest.json
+├─ 0-calm.webp / 0-calm.webm        # 每档 static 必需，dynamic 可选
+└─ ...
+```
+
+只接受位图（webp/jpg/png/avif/gif/apng）与视频（mp4/webm），不接受用户提供 SVG。完整规范与校验方式见 [docs/packs.md](docs/packs.md)。
+
+重新生成内置素材（需要 Python + Pillow + numpy + ffmpeg）：
+
+```sh
+python scripts/gen-assets.py
+python scripts/gen-assets.py --skip-video   # 只出静态图
+```
+
+## 项目结构
+
+```
+lib/                 发布内容：host 模块 + 自包含 client bundle + 内置素材
+test/                node --test 测试（host / client / assets）
+scripts/             gen-assets.py、pack-check.mjs、build-client.mjs
+docs/                design.md、packs.md
+examples/            manual 模式 profile overlay
+.github/workflows/   CI（Node 20 / 22）
+```
+
+本项目没有编译步骤：`lib/` 是手写 ESM 源码，`lib/client.js` 是单个自包含的 DSH client bundle。
+
+## 开发与测试
+
+```sh
+npm test                      # node --test：host + client + assets
+node scripts/build-client.mjs # 校验 client bundle 包装形态
+node scripts/pack-check.mjs   # 校验内置素材包（也可传任意素材包目录）
+```
+
+HTTP 接口（同源、只读为主）：
+
+| 方法与路径 | 说明 |
+|---|---|
+| `GET /plugins/dsh-spend-wallpaper/state` | 当前快照（`no-store`） |
+| `GET /plugins/dsh-spend-wallpaper/packs` | 已发现素材包 |
+| `GET /plugins/dsh-spend-wallpaper/assets/<pack>/<file>` | 素材（ETag + `max-age=3600`） |
+| `POST /plugins/dsh-spend-wallpaper/refresh` | 立即采样（10 秒限流） |
+
+`source=manual` + `POST /refresh` 可以在不真实烧钱的情况下把所有档位过一遍。
+
+## 已验证（2026-11-09，DSH 0.2.2-rc.1）
+
+- 组合装载：临时 profile 中 `dsh --profile <p> --dump-config` 出现 `spend-wallpaper` 行；`--dump-config-schema` 成功导入 `Config` 并投影出 volatile 字段（说明 `@deepseek-ai/schemastery` 可由宿主 runtime resolution 解析）。
+- 真实宿主：`dsh --profile <p> --port 0 --no-open` 启动后
+  - `GET /plugins/dsh-spend-wallpaper/state` 返回完整快照（未配置数据源时 `status: unavailable`，不会报错刷屏）；
+  - `GET /plugins/dsh-spend-wallpaper/packs` 列出内置「深海情绪」5 档；
+  - `GET .../assets/default/0-calm.webp` → `200 image/webp`，`.webm` → `200 video/webm`，带 ETag / `max-age=3600`；目录穿越 → `404`，`Sec-Fetch-Site: cross-site` → `403`；
+  - `POST .../refresh` → 返回刷新后的快照；
+  - `source=manual, manualSpend=0.40` → `tier=2「起浪」`、`next=1.50「浪涌」`，素材 URL 指向 `2-swell.webm`。
+- 自动化测试：`npm test` 覆盖 host 逻辑、client bundle 生命周期（stub DOM）、内置素材完整性。
+- 素材：5 × 2560×1440 WebP（约 220–310 KB）+ 5 × 1280×720 VP9 WebM（6s，约 90–111 KB），全部由 `scripts/gen-assets.py` 程序化生成。
+
+**未验证**：真实浏览器里的视觉效果（frame/full 两种模式、视频自动播放、reduced-motion、Desktop 载体的 file:// fetch 桥）。这些属于 M1 的浏览器回归测试。
+
+## 已知限制
+
+- `frame` 模式依赖 Web 壳的 `<body><div id="root">…` 结构；`full` 模式依赖 `--dsw-alias-bg-base` / `--dsw-specific-sidebar-fill` 两个主题 token。宿主大版本升级后若结构变化，插件会自动退化为 `frame` 的安全子集（设置页会提示）。
+- 余额接口有分钟级计费延迟；窗口值标注为"约"。充值/赠送回收按 0 消耗处理。
+- 同一账号在其它设备上的消耗会计入余额差（这是"账号消耗"而非"本机消耗"）。
+- `cost-meter` 适配目前不参与计算：`dsh-cost-meter@1.9.x` 账本只保留按天/按会话聚合，没有逐次调用时间戳，无法重建 1 小时窗口。
+- 暂不做 Windows 桌面壁纸（设计文档中的 v2 适配器）。
+
+## License
+
+插件代码 [MIT](LICENSE)；内置素材由 `scripts/gen-assets.py` 程序化生成，[CC0-1.0](LICENSE-ASSETS)。

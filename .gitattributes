@@ -1,0 +1,17 @@
+# Normalize line endings so the plugin works from a Windows or Unix checkout.
+* text=auto eol=lf
+
+# Wallpaper media stays byte-identical.
+*.webp binary
+*.webm binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.avif binary
+*.woff2 binary
+
+# Windows scripts keep CRLF if any are added later.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

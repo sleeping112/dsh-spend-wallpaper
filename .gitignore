@@ -1,0 +1,25 @@
+# dependencies / package managers
+node_modules/
+.pnpm-store/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# local state / tooling
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.tmp
+*.log
+coverage/
+
+# python bytecode from scripts/gen-assets.py
+__pycache__/
+*.py[cod]
+
+# local verification scratch files
+/preview/
+/wp-*.yml
+/wp-*.json
+/wp-*.err
