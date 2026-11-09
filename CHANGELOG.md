@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-10
+
+### Changed
+
+- Rebuilt the built-in "Deep Sea Mood" pack with a new procedural renderer:
+  five distinct scenes (aurora over a polar sea, moonlit whales, violet
+  sunset with a boat, storm with lighthouse beam + rain + lightning, red
+  tsunami with a glowing crest and embers), 2560×1440 static WebP stills and
+  short seamless VP9 loops.
+- Full-bleed defaults are stronger now: `surfaceOpacity` 0.50, `scrim` 0.20,
+  `dim` 0.05, plus a subtle saturation/contrast boost on the wallpaper media
+  layer. `full` mode also makes the `body` background transparent so the
+  wallpaper is not dimmed twice by body + panel alpha.
+- Default video loops are shorter (3.3 s) and render at 960×540 to keep the
+  installed package small and generation cheap; static stills stay 2560×1440.
+
 ## [0.4.0] - 2026-11-10
 
 ### Changed

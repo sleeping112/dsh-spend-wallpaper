@@ -88,8 +88,8 @@
     mode: frame
     media: auto
     thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
-    scrim: 0.28        # 壁纸上的暗化（0–1），太大就调小
-    dim: 0.08
+    scrim: 0.20        # 壁纸上的暗化（0–1），太大就调小
+    dim: 0.05
     inset: 16          # 相框边距
     radius: 16         # 画面圆角
 ```
@@ -138,7 +138,7 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 | 一直是第 0 档、不随消耗变化 | 看 `state.json`：`samples` 是否增长、`source` 是哪个；账号钱包为 0 或订阅制时 `auto` 会用 `cost-meter`（需先安装它）。都没有就配 `DEEPSEEK_API_KEY` |
 | 想用钱包而不是本地估算 | 配置 `source: account`；钱包余额必须大于 0，否则无法用差分 |
 | 变化太慢 | 默认 3 分钟采样 + 10 分钟驻留；临时联调可把 `sampleSeconds`/`minDwellSeconds` 调小（最小 60） |
-| 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.55），或加一点 `blur` |
+| 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.50），或加一点 `blur` |
 | 动态视频不动 | 系统开了「减少动态效果」时按设计降级为静态；可把 `media` 改成 `dynamic` 验证，或换 `static` |
 | 想彻底移除 | 插件页找到 `dsh-spend-wallpaper` → **卸载**，然后重启 DSH |
 

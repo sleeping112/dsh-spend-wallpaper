@@ -484,8 +484,8 @@ bin/dsh-spend-wallpaper.mjs
 | 档位 | `minDwellSeconds` | 600 | 最短驻留 |
 | 素材 | `pack`, `media` | default, auto | 素材包 / static / dynamic / auto |
 | 渲染 | `mode` | full | full（铺满）/ frame（相框） |
-| 渲染 | `scrim`, `dim`, `blur` | .28 / .08 / 0 | 可读性与氛围 |
-| 渲染 | `surfaceOpacity` | .55 | full 模式面板不透明度 |
+| 渲染 | `scrim`, `dim`, `blur` | .20 / .05 / 0 | 可读性与氛围 |
+| 渲染 | `surfaceOpacity` | .50 | full 模式面板不透明度 |
 | 渲染 | `inset`, `radius` | 16 / 16 | frame 模式相框 |
 | 其它 | `lockedTier`, `manualSpend` | "" / "0" | 锁定档位 / manual 源 |
 
@@ -583,7 +583,7 @@ bin/dsh-spend-wallpaper.mjs
 ## 附录 D：M1 待验证假设
 
 1. Electron（Desktop 宿主）里 file:// 页面的 `/plugins/...` fetch 是否经 IPC 桥接（Web 模式已验证；Desktop 待验证）。
-2. `full` 模式面板半透明在浅/深主题下的可读性；默认 `surfaceOpacity` 已从 0.7 调到 0.55（壁纸更明显），必要时再调。
+2. `full` 模式面板半透明在浅/深主题下的可读性；默认 `surfaceOpacity` 已从 0.7 调到 0.50（壁纸更明显），必要时再调。
 3. 视频随 `<video>` 预加载/循环的耗电与首帧时间。
 4. 自绘设置页在 `settings.section` 与 `plugins.bundle.config` 两个 slot 的注册与卸载清理。
 

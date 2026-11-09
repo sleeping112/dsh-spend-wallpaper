@@ -11,13 +11,14 @@
 
 ## 特性
 
+- **自定义素材包**：`$DSH_HOME/spend-wallpaper/packs/<id>/manifest.json`，用户包可覆盖同名内置包。
 - **滚动 1 小时消耗**：`余额(now) − 余额(now − 60min)`，不是"今天花了多少"。
 - **三路数据源**：`dsh-cost-meter` 本地用量估算（默认优先，适配订阅/零钱包账号）→ 桌面登录账号钱包（`ctx.deepseekAccount`）→ 开放平台 `/user/balance`（API Key）；`manual` 用于联调。
 - **静态 / 动态可选**：`auto` / `static` / `dynamic`；尊重 `prefers-reduced-motion`，窗口不可见时暂停视频。
 - **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
 - **两种显示模式**：`full`（默认，壁纸铺满整个窗口、界面半透明）与 `frame`（相框，仅在四周露出壁纸，最保守）。
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
-- **自定义素材包**：`$DSH_HOME/spend-wallpaper/packs/<id>/manifest.json`，用户包可覆盖同名内置包。
+- **五档电影感场景**：极光冰海 / 月下鲸群 / 紫潮落日 / 灯塔风暴 / 赤潮海啸，每档一棵静态 WebP + 一段循环 WebM。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
 - **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
 
@@ -65,8 +66,8 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
 | `mode` | `full` | `full`（铺满）/ `frame`（相框） |
 | `media` | `auto` | `auto` / `static` / `dynamic` |
 | `pack` | `default` | 素材包 id |
-| `scrim` / `dim` / `blur` | `.28` / `.08` / `0` | 可读性、氛围与壁纸模糊 |
-| `surfaceOpacity` | `.55` | `full` 模式面板不透明度（越低壁纸越明显） |
+| `scrim` / `dim` / `blur` | `.20` / `.05` / `0` | 可读性、氛围与壁纸模糊 |
+| `surfaceOpacity` | `.50` | `full` 模式面板不透明度（越低壁纸越明显） |
 | `inset` / `radius` | `16` / `16` | `frame` 模式相框 |
 | `transitionMs` | `600` | 交叉淡入时长 |
 | `hysteresis` | `.25` | 越过阈值 25% 才换档 |
