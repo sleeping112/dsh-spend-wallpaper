@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-10
+
+### Added
+
+- `cost-meter` data source: sample `dsh-cost-meter`'s `getState().today` cost
+  counter and diff it over the plugin window, so subscription/token-plan and
+  zero-wallet accounts still drive the wallpaper. `auto` now prefers
+  cost-meter → account → api. Persisted samples carry a `kind`
+  (`balance`/`spend`) so the two counter directions never mix in one window.
+
 ## [0.2.0] - 2026-11-10
 
 ### Added

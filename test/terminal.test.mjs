@@ -47,7 +47,7 @@ async function withHome(fn) {
 }
 
 const STATE = {
-  samples: [{ t: Date.now() - 10_000, totalMicro: 0, currency: 'CNY' }],
+  samples: [{ t: Date.now() - 10_000, totalMicro: -400_000, currency: 'CNY', kind: 'spend' }],
   tier: { index: 2, changedAt: 0 },
   currency: 'CNY',
   spendMicro: 400_000, // ¥0.40
@@ -108,6 +108,11 @@ test('status card carries spend, tier and source', () => {
   assert.match(card, /0\.40/)
   assert.match(card, /起浪/)
   assert.match(card, /手动值/)
+})
+
+test('status card labels the cost-meter source', () => {
+  const card = renderStatusCard({ spend: '0.12', tierIndex: 1, tierLabel: '微澜', source: 'cost-meter', samples: 3, updatedAt: Date.now() })
+  assert.match(card, /本地用量估算/)
 })
 
 test('CLI status --json reads the persisted snapshot', () => withHome(async (home) => {
@@ -176,4 +181,5 @@ test('store round-trips snapshot fields for the CLI', () => withHome(() => {
   assert.equal(loaded.spendMicro, STATE.spendMicro)
   assert.equal(loaded.source, 'manual')
   assert.deepEqual(loaded.config.thresholds, STATE.config.thresholds)
+  assert.equal(loaded.samples[0].kind, 'spend')
 }))

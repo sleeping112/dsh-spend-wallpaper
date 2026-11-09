@@ -33,9 +33,9 @@
 
 - 壁纸出现在应用画面四周（`frame` 模式），中间是 DSH 界面；
 - 打开 `$DSH_HOME/storages/spend-wallpaper/state.json`，应该能看到 `samples` 数组在缓慢增加，或至少有一行 `lastError` 说明数据源状态；
-- 默认 `source: auto`：先用桌面登录的 DeepSeek 账号钱包；没有账号服务时再试 `DEEPSEEK_API_KEY`。
+- 默认 `source: auto` 的选择顺序：**`dsh-cost-meter` 本地用量估算**（装了 `dsh-cost-meter` 时优先，订阅/零钱包也能用）→ 桌面登录账号钱包 → `DEEPSEEK_API_KEY`。
 
-> 看余额是否真的取到：等 3–5 分钟看 `state.json` 里的 `samples` 是否变多。如果一直是空数组且 `lastError` 非空，说明账号/Key 没配置好，见第 6 节。
+> 看数据是否真的取到：等 3–5 分钟看 `state.json` 里的 `samples` 是否变多，`source` 是哪个。如果 `samples` 一直为空且 `lastError` 非空，说明三个数据源都没成功，见第 7 节。
 
 ---
 
@@ -135,7 +135,8 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 | 现象 | 处理 |
 |---|---|
 | 装完没有壁纸 | 插件是否已启用（插件页）；`Ctrl+R` 刷新；重启 DSH；确认用的是 Web GUI，不是终端界面 |
-| 一直是第 0 档、不随消耗变化 | 看 `state.json`：`samples` 为空/`lastError` 提示账号未登录或没有 API Key。到 **设置 → 账号** 登录，或在 **设置 → 模型** 里配置 `DEEPSEEK_API_KEY` |
+| 一直是第 0 档、不随消耗变化 | 看 `state.json`：`samples` 是否增长、`source` 是哪个；账号钱包为 0 或订阅制时 `auto` 会用 `cost-meter`（需先安装它）。都没有就配 `DEEPSEEK_API_KEY` |
+| 想用钱包而不是本地估算 | 配置 `source: account`；钱包余额必须大于 0，否则无法用差分 |
 | 变化太慢 | 默认 3 分钟采样 + 10 分钟驻留；临时联调可把 `sampleSeconds`/`minDwellSeconds` 调小（最小 60） |
 | 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.7） |
 | 动态视频不动 | 系统开了「减少动态效果」时按设计降级为静态；可把 `media` 改成 `dynamic` 验证，或换 `static` |

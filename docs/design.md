@@ -9,12 +9,13 @@
 
 ## 0. TL;DR
 
-**Host 半边**每 3 分钟采样一次 DeepSeek 余额（桌面登录钱包优先，其次开放平台 `/user/balance`），用「当前余额 − 60 分钟前余额」得到**滚动 1 小时消耗**，经迟滞/最短驻留映射到 5 个档位；**Client 半边**是 `dsh.client` 浏览器插件，在 `body` 下插入 `z-index:-1` 的全屏壁纸层（静态图或静音循环视频），通过覆盖 `--dsw-*` 背景 token 让应用面板透出壁纸；档位决定素材，切换走 600ms 交叉淡入。
+**Host 半边**每 3 分钟采样一次「消耗计数」（优先 `dsh-cost-meter` 的本地估算成本计数器，其次桌面登录钱包、开放平台 `/user/balance`），用「60 分钟前 − 当前」得到**滚动 1 小时消耗**，经迟滞/最短驻留映射到 5 个档位；**Client 半边**是 `dsh.client` 浏览器插件，在 `body` 下插入 `z-index:-1` 的全屏壁纸层（静态图或静音循环视频），通过覆盖 `--dsw-*` 背景 token 让应用面板透出壁纸；档位决定素材，切换走 600ms 交叉淡入。
 
 ```
 ┌──────────────────────────── Host (Node, Cordis 插件) ────────────────────────────┐
-│  BalanceSampler ──3min──► samples[(t, balance)] ──► SpendWindow(60min) ──► Tier  │
+│  BalanceSampler ──3min──► samples[(t, counter/balance, kind)] ──► SpendWindow(60min) ──► Tier  │
 │      │  adapters:                                                                │
+│      ├─ cost-meter (ctx.costMeter.getState().today 成本计数器，差分)             │
 │      ├─ account   (ctx.deepseekAccount.getBalance)                               │
 │      ├─ api       (GET /user/balance, ctx.credentials / env)                      │
 │      └─ manual    (调试/联调)                                                     │
@@ -77,7 +78,7 @@
 |---|---|---|
 | "壁纸"指什么 | **DSH 应用内背景** | 可用公开插件机制实现；桌面壁纸需 Win32/Lively，v2 再议 |
 | 消耗数据从哪来 | **滚动窗口余额差分** | 与"余额消耗"语义一致；不依赖第三方插件 |
-| 是否依赖 dsh-cost-meter | **不依赖**。实测其 1.9.46 账本只按天/按会话聚合，没有逐次调用时间戳，无法重建 1 小时窗口 | 账本结构也不是公开契约；只保留 `source: cost-meter` 作为将来等价于 `auto` 的占位 |
+| 是否依赖 dsh-cost-meter | **不硬依赖**；`auto` 首选它的今日成本计数器（差分出窗口消耗），未安装时回退账号/API | 账本本身无逐次时间戳，只读服务实时累计值；对订阅/零钱包账号也有效 |
 | 静态/动态如何选 | 素材包同时声明 `static` 与 `dynamic`，运行期按配置 + 系统偏好选择 | 允许某档只有静态 |
 | 应用内渲染方式 | 独立全屏层 + token 半透明覆盖 | `ctx.theme` 只能换颜色不能换图 |
 | 档位映射 | 5 档、绝对阈值、可配置；带迟滞 + 最短驻留 | 简单可解释；自适应阈值放 v2 |
@@ -105,28 +106,37 @@
 - **只允许 `https://api.deepseek.com`**（Host 校验 hostname，防止 Key 被发往第三方域名）。
 - 解析 `balance_infos[]`，按配置币种挑选；金额为十进制字符串。
 
-**C. `manual`（调试/联调）**
+**C. `cost-meter`（本地用量估算，`auto` 首选）**
+
+- 前提：已安装 `dsh-cost-meter` 且其 `ctx.costMeter` 服务可用（本机已安装 1.9.46）。
+- 读取 `ctx.costMeter.getState().today` 的当日累计成本（`apiCostCny` / `costCny` / `apiCost` / `cost`，按配置币种与 `usdCny` 折算），**把累计计数取负后作为样本**，与余额样本共用同一套 `older − newer` 窗口算法——计数器增长即代表窗口内消耗。
+- 优点：订阅制、Token Plan、零钱包账号同样可用；金额来自本地用量估算（与官方账单有分钟级差异），不依赖账号钱包余额。
+- 限制：`dsh-cost-meter` 的账本本身只有按天/按会话聚合、没有逐次时间戳（所以不能直接读账本重建 1 小时窗口），这里用的是它**服务里的实时累计值**，靠本插件自己的采样差分出窗口；`dsh-cost-meter` 未安装时自动回退。
+
+**D. `manual`（调试/联调）**
 
 - `manualSpend` 直接作为"当前 1 小时消耗"，不需要采样窗口；用于把 5 个档位在几分钟内过一遍。
 
-`source: 'auto'` 顺序：`account → api → manual`。每次尝试失败都记一条可读诊断（`account-service-absent` / `api-key-missing` 等），设置页可看到"为什么没用上账号余额"。
+`source: 'auto'` 顺序：`cost-meter → account → api → manual`。每次尝试失败都记一条可读诊断（`cost-meter-absent` / `account-service-absent` / `api-key-missing` 等），设置页可看到"为什么没用上某个源"。
 
 ### 4.2 采样、滚动窗口与边界情况
 
 ```ts
 // 采样：默认每 180s，±10% 抖动；失败指数退避（60s → 30min 封顶）
-// 样本 { t, totalMicro, currency }，持久化后可跨重启继续窗口
+// 样本 { t, totalMicro, currency, kind }，持久化后可跨重启继续窗口
+//   kind='balance'：totalMicro = 钱包余额（下降代表消耗）
+//   kind='spend'  ：totalMicro = -累计成本计数器（上升代表消耗）
 const snap = await pickSource().read(ctx)
-appendSample(samples, { t: snap.at, totalMicro: snap.totalMicro, currency: snap.currency })
+appendSample(samples, { t: snap.at, totalMicro: snap.totalMicro, currency: snap.currency, kind: snap.kind })
 trimSamples(samples, now - max(3h, 3 * windowMs))
 
-// 滚动窗口消耗
+// 滚动窗口消耗（只在同 currency + 同 kind 内比较）
 function windowSpend(samples, now, windowMs) {
   const older = lastAtOrBefore(samples, now - windowMs)   // 早于/等于 now-window 的最后一个样本
   const newer = lastAtOrBefore(samples, now)
   if (!older || !newer || newer.t - older.t < windowMs * 0.75) return warming
   const delta = older.totalMicro - newer.totalMicro
-  if (delta < 0) return { spend: 0, reason: 'reset' }     // 充值 / 赠送回收 / 换账号
+  if (delta < 0) return { spend: 0, reason: 'reset' }     // 充值 / 赠送回收 / 计数器跨日归零
   return { spend: delta, reason: 'ok' }
 }
 ```
@@ -151,7 +161,7 @@ Host 服务 `ctx.provide('wallpaper', runtime)`（可选，方便其它插件消
 ```ts
 {
   schema: 1, enabled: boolean,
-  source: 'account' | 'api' | 'manual' | null,
+  source: 'cost-meter' | 'account' | 'api' | 'manual' | null,
   status: 'ok' | 'warming' | 'stale' | 'unavailable' | 'error' | 'off',
   currency: string,
   spend1h: string | null,          // 十进制字符串；null = 未知
@@ -461,7 +471,7 @@ bin/dsh-spend-wallpaper.mjs
 | 分组 | 配置项 | 默认 | 说明 |
 |---|---|---|---|
 | 总开关 | `enabled` | true | 关闭后移除壁纸层并恢复覆盖 |
-| 数据 | `source` | auto | auto / account / api / manual（`cost-meter` 保留，等同 auto） |
+| 数据 | `source` | auto | auto / cost-meter / account / api / manual；auto 顺序 cost-meter → account → api |
 | 数据 | `currency`, `usdCny` | CNY, 7.2 | 显示币种与折算率 |
 | 数据 | `apiBase`, `apiKeyEnv` | 官方, `DEEPSEEK_API_KEY` | 仅官方域名 |
 | 数据 | `windowMinutes` | 60 | 滚动窗口 5–180 |
@@ -513,6 +523,7 @@ bin/dsh-spend-wallpaper.mjs
 |---|---|---|
 | **M0 技术验证** | Host 采样/窗口/档位/HTTP + Client 壁纸层 + 内置静态素材 + manual source | ✅ 完成 |
 | **M0.1 终端 surface** | `status` / `render` CLI、状态文件扩展、ANSI 渲染测试 | ✅ 完成 |
+| **M0.2 cost-meter 源** | `ctx.costMeter.getState().today` 计数器差分（订阅/零钱包可用）、样本 kind、CLI 来源标签 | ✅ 完成 |
 | **M1 可用** | 自绘设置页（状态卡/预览/锁定）+ 动态视频启用确认 + full 模式调参 + i18n + 视觉回归 | ⏳ |
 | **M2 完整** | 用户素材包热加载、素材诊断面板、性能调优、发布插件市场 | ⏳ |
 
@@ -564,7 +575,7 @@ bin/dsh-spend-wallpaper.mjs
 | webserver：`register({ kind, path, resource|handler })`；resource 仅 GET/HEAD；无认证 | `@deepseek-ai/dsh-host-webserver/lib/index.js` + README |
 | 账号余额：`ctx.deepseekAccount.getBalance(metadata)`，`value`/`bonusWallets` 钱包列表；`getState().status` | `dsh-deepseek-account` README、cost-meter `index.js` |
 | volatile Config 字段是 getter ref（`.get()`）；设置只展示 volatile | `dsh-experimental-speech-to-text/lib/index.js`、`dsh-settings` README |
-| cost-meter 账本：`$DSH_HOME/storages/cost-meter/ledger.json` 按天/会话聚合，无逐次时间戳 | 本机实际 ledger.json + `store.js` |
+| cost-meter 账本：`$DSH_HOME/storages/cost-meter/ledger.json` 按天/会话聚合，无逐次时间戳；但 `ctx.costMeter.getState().today` 提供实时累计成本 | 本机实际 ledger.json + cost-meter `lib/index.js` 的 `getState` |
 | 临时 profile 可跑通：`dsh --profile wp-test --dump-config-schema` / `--port 0 --no-open` | 本机实测 |
 
 ## 附录 D：M1 待验证假设
@@ -574,7 +585,7 @@ bin/dsh-spend-wallpaper.mjs
 3. 视频随 `<video>` 预加载/循环的耗电与首帧时间。
 4. 自绘设置页在 `settings.section` 与 `plugins.bundle.config` 两个 slot 的注册与卸载清理。
 
-## 附录 E：M0 验证记录（2026-11-09，DSH 0.2.2-rc.1）
+## 附录 E：M0 验证记录（2026-11-09 / 11-10，DSH 0.2.2-rc.1）
 
 | 验证项 | 命令 / 方式 | 结果 |
 |---|---|---|
@@ -588,6 +599,8 @@ bin/dsh-spend-wallpaper.mjs
 | 刷新 | `POST /plugins/dsh-spend-wallpaper/refresh` | 返回最新快照 |
 | Host 单测 | `npm test` | host / client / assets / terminal 全部通过 |
 | 终端 CLI | `node bin/dsh-spend-wallpaper.mjs status --json` / `render --tier 4 --once` | 读取快照、输出状态卡与 ANSI 字符画 |
+| 实机安装（desktop） | 插件页安装 `link:E:/workspace/dsh-spend-wallpaper` | profile 依赖与 bundles 含 `dsh-spend-wallpaper`；HMR 下禁用/启用可热重载新代码 |
+| 实机运行 | `GET /plugins/dsh-spend-wallpaper/state` + `state.json` | `source=cost-meter`、`tier=0`、计数器约 ¥2.50；CLI `status` 显示「本地用量估算」 |
 | Client 烟雾测试 | `npm test`（`test/client.test.mjs`） | factory → apply → state 渲染（full 模式、video 帧、样式注入）→ dispose 清理全部通过 |
 | 素材检查 | Pillow 打开 WebP；`ffprobe` 检查 WebM | 2560×1440 WebP；1280×720 VP9、6.000s |
 

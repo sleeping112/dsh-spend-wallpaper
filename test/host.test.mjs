@@ -13,7 +13,7 @@ import { parseAmount, formatAmount, cmpAmount, mulRatio } from '../lib/money.js'
 import { resolveTier, mapPackIndex, parseTierTable, nextThreshold } from '../lib/tiers.js'
 import { appendSample, trimSamples, windowSpend } from '../lib/window.js'
 import { loadPacks, resolveAsset, resolvePack, validateManifest } from '../lib/packs.js'
-import { normalizeApiBase } from '../lib/sources.js'
+import { normalizeApiBase, readCostMeterSpend } from '../lib/sources.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -137,16 +137,65 @@ test('windowSpend restarts on currency change', () => {
   assert.equal(windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 }).reason, 'warming')
 })
 
+test('windowSpend handles growing cost-counter samples', () => {
+  const data = [
+    { t: 0, totalMicro: -1_000_000, currency: 'CNY', kind: 'spend' },
+    { t: 3600_000, totalMicro: -1_400_000, currency: 'CNY', kind: 'spend' },
+  ]
+  const result = windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 })
+  assert.equal(result.spendMicro, 400_000)
+  assert.equal(result.reason, 'ok')
+})
+
+test('windowSpend never mixes balance and cost samples', () => {
+  const data = [
+    { t: 0, totalMicro: -1_000_000, currency: 'CNY', kind: 'spend' },
+    { t: 1800_000, totalMicro: 10_000_000, currency: 'CNY', kind: 'balance' },
+    { t: 3600_000, totalMicro: -1_400_000, currency: 'CNY', kind: 'spend' },
+  ]
+  const result = windowSpend({ samples: data, now: 3600_000, windowMs: 3600_000 })
+  assert.equal(result.spendMicro, 400_000)
+})
+
 test('appendSample keeps samples monotonic and trims', () => {
   const data = []
   appendSample(data, { t: 1000, totalMicro: 1, currency: 'CNY' })
   appendSample(data, { t: 1000, totalMicro: 99, currency: 'CNY' })
   appendSample(data, { t: 500, totalMicro: 5, currency: 'CNY' })
   assert.equal(data.length, 1)
-  appendSample(data, { t: 2000, totalMicro: 2, currency: 'CNY' })
+  appendSample(data, { t: 2000, totalMicro: 2, currency: 'CNY', kind: 'spend' })
   appendSample(data, { t: 3000, totalMicro: 3, currency: 'CNY' })
+  assert.equal(data[1].kind, 'spend')
   trimSamples(data, 2500)
   assert.deepEqual(data.map((sample) => sample.t), [2000, 3000])
+})
+
+// ------------------------------------------------------------------ sources
+
+test('cost-meter source reads the daily counter in the configured currency', async () => {
+  const ctx = {
+    get: (name) => (name === 'costMeter'
+      ? { getState: async () => ({ today: { apiCostCny: 2.5, apiCost: 0.35, cost: 0.4, costCny: 2.8 } }) }
+      : undefined),
+  }
+  const cny = await readCostMeterSpend(ctx, { currency: 'CNY', usdCny: 7.2 })
+  assert.equal(cny.ok, true)
+  assert.equal(cny.source, 'cost-meter')
+  assert.equal(cny.currency, 'CNY')
+  assert.equal(cny.counterMicro, 2_500_000)
+
+  const usd = await readCostMeterSpend(ctx, { currency: 'USD', usdCny: 7.2 })
+  assert.equal(usd.ok, true)
+  assert.equal(usd.counterMicro, 350_000)
+})
+
+test('cost-meter source reports absence instead of fabricating a value', async () => {
+  const absent = await readCostMeterSpend({ get: () => undefined }, { currency: 'CNY' })
+  assert.equal(absent.ok, false)
+  assert.equal(absent.reason, 'cost-meter-absent')
+  const empty = await readCostMeterSpend({ get: () => ({ getState: async () => ({}) }) }, { currency: 'CNY' })
+  assert.equal(empty.ok, false)
+  assert.equal(empty.reason, 'cost-meter-no-today')
 })
 
 // ------------------------------------------------------------------ packs
