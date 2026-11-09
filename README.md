@@ -2,6 +2,7 @@
 
 按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置一套程序化生成的「深海情绪」素材（5 档 × 静态 WebP + 动态 WebM 循环视频），也支持自定义素材包。
 
+- 快速上手：[docs/quickstart.md](docs/quickstart.md)
 - 设计文档：[docs/design.md](docs/design.md)
 - 素材包作者指南：[docs/packs.md](docs/packs.md)
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)
@@ -20,7 +21,7 @@
 
 ## 安装
 
-插件通过 profile 的 patch 层插入一行 host 插件，浏览器半边由 `dsh.client` 声明自动提供。
+插件通过 profile 的 patch 层插入一行 host 插件，浏览器半边由 `dsh.client` 声明自动提供。桌面 App 的图形步骤见 [快速上手](docs/quickstart.md)，命令行方式是：
 
 ```sh
 # Web profile（可替换为 desktop 等 profile 名）

@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `docs/quickstart.md`: 5-minute Chinese quick-start guide (install via the
+  plugin manager, verify all five tiers with `source: manual`, daily settings,
+  custom packs and troubleshooting).
+
 ## [0.1.0] - 2026-11-10
 
 Initial M0 implementation.

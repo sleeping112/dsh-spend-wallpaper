@@ -1,0 +1,139 @@
+# 快速上手（5 分钟）
+
+本教程面向已经装好 DSH Desktop / Web 的用户。插件装好后，DSH 窗口背景会随「最近 1 小时消耗的 DeepSeek 余额」变化。
+
+> 当前版本是 M0：**还没有设置页**，配置通过 profile 的 `cordis.patch.yml` 完成（本文会给出可直接复制的片段）。M1 会加图形设置页。
+
+- 安装目录：`E:\workspace\dsh-spend-wallpaper`
+- 配置目录：`C:\Users\32602\.dsh\profiles\desktop\`（下文用 `$DSH_HOME/profiles/desktop` 表示）
+- 状态文件：`$DSH_HOME/storages/spend-wallpaper/state.json`
+
+---
+
+## 1. 安装（桌面 App，推荐）
+
+1. 打开 DSH 侧栏的 **插件** 页；
+2. 点右上角 **添加插件** → 菜单里选 **安装第三方插件**；
+3. 在包名输入框里填本地绝对路径：
+
+   ```
+   E:\workspace\dsh-spend-wallpaper
+   ```
+
+4. 点 **安装**，等它完成；
+5. 安装完成界面点 **立即启用**（如果没点，就在「已安装插件」里把 `dsh-spend-wallpaper` 打开）。
+
+如果窗口背景没有立刻变化：先按 `Ctrl+R` 刷新页面；仍然没有就完全退出并重启 DSH（部分 profile 没开 HMR 时需要重启）。
+
+> 装好后不用改任何配置，**默认就会显示第 0 档「无波」壁纸**（相框模式），四周能看到深蓝色的海面。
+
+---
+
+## 2. 第一次确认它工作
+
+- 壁纸出现在应用画面四周（`frame` 模式），中间是 DSH 界面；
+- 打开 `$DSH_HOME/storages/spend-wallpaper/state.json`，应该能看到 `samples` 数组在缓慢增加，或至少有一行 `lastError` 说明数据源状态；
+- 默认 `source: auto`：先用桌面登录的 DeepSeek 账号钱包；没有账号服务时再试 `DEEPSEEK_API_KEY`。
+
+> 看余额是否真的取到：等 3–5 分钟看 `state.json` 里的 `samples` 是否变多。如果一直是空数组且 `lastError` 非空，说明账号/Key 没配置好，见第 6 节。
+
+---
+
+## 3. 1 分钟把五个档位都看一遍（不花真钱）
+
+打开 `C:\Users\32602\.dsh\profiles\desktop\cordis.patch.yml`，在文件末尾追加：
+
+```yaml
+- id: spend-wallpaper
+  config:
+    source: manual
+    manualSpend: "0.40"
+    sampleSeconds: 60
+    minDwellSeconds: 60
+    hysteresis: 0
+```
+
+保存后等几秒（HMR 会自动重载）；壁纸应切成第 2 档 **「起浪」**（紫蓝色海浪）。
+
+然后依次把 `manualSpend` 改成下面的值，每次等最多约 1 分钟（或重启应用立刻生效）：
+
+| `manualSpend` | 档位 | 名称 |
+|---|---|---|
+| `"0"` | 0 | 无波 |
+| `"0.10"` | 1 | 微澜 |
+| `"0.40"` | 2 | 起浪 |
+| `"2"` | 3 | 浪涌 |
+| `"8"` | 4 | 海啸 |
+
+看完把 `source: manual` 改成 `source: auto`（或删掉上面这段），回到真实余额模式。
+
+---
+
+## 4. 日常使用
+
+- **自动切换**：默认就是自动。阈值是 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，每 3 分钟采样一次，档位变化有「迟滞 + 最短驻留 10 分钟」防抖。
+- **切静态/动态**：`media: auto`（默认，有视频用视频、开了减少动效用静态）/ `static` / `dynamic`。
+- **显示模式**：`mode: frame`（默认，四周相框）或 `mode: full`（壁纸铺满、界面半透明；偏实验性，先试再长期用）。
+- **方向**：`direction: poor`（默认，花得越多越惨）或 `rich`（花得越多越豪华）。
+- **不想被换**：`enabled: false` 关掉，或 `lockedTier: "calm"` 锁在某一档。
+- **全屏/终端面板**：壁纸在应用背景层，终端、菜单等面板不会被替换；`frame` 模式下终端面板之外仍能看到壁纸。
+
+常用完整配置示例：
+
+```yaml
+- id: spend-wallpaper
+  config:
+    source: auto
+    direction: poor
+    mode: frame
+    media: auto
+    thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
+    scrim: 0.28        # 壁纸上的暗化（0–1），太大就调小
+    dim: 0.08
+    inset: 16          # 相框边距
+    radius: 16         # 画面圆角
+```
+
+---
+
+## 5. 换成自己的壁纸（可选）
+
+1. 建目录 `C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack\`；
+2. 放 5 张图（每档一张）和 `manifest.json`，格式照抄
+   `E:\workspace\dsh-spend-wallpaper\lib\assets\packs\default\manifest.json`；
+3. 校验：
+
+   ```sh
+   node E:\workspace\dsh-spend-wallpaper\scripts\pack-check.mjs "C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack"
+   ```
+
+4. 配置里加 `pack: my-pack`，保存后最多 1 分钟生效。
+
+详细规则见 [packs.md](packs.md)。
+
+---
+
+## 6. 常见问题
+
+| 现象 | 处理 |
+|---|---|
+| 装完没有壁纸 | 插件是否已启用（插件页）；`Ctrl+R` 刷新；重启 DSH；确认用的是 Web GUI，不是终端界面 |
+| 一直是第 0 档、不随消耗变化 | 看 `state.json`：`samples` 为空/`lastError` 提示账号未登录或没有 API Key。到 **设置 → 账号** 登录，或在 **设置 → 模型** 里配置 `DEEPSEEK_API_KEY` |
+| 变化太慢 | 默认 3 分钟采样 + 10 分钟驻留；临时联调可把 `sampleSeconds`/`minDwellSeconds` 调小（最小 60） |
+| 画面太亮/看不清字 | 调大 `scrim`、`dim`，或改用 `mode: frame`；`full` 模式可把 `surfaceOpacity` 调大（默认 0.7） |
+| 动态视频不动 | 系统开了「减少动态效果」时按设计降级为静态；可把 `media` 改成 `dynamic` 验证，或换 `static` |
+| 想彻底移除 | 插件页找到 `dsh-spend-wallpaper` → **卸载**，然后重启 DSH |
+
+---
+
+## 7. 开发者快速检查（可选）
+
+端口以 DSH 实际打开的 URL 为准（例如 `http://127.0.0.1:65239`）：
+
+```sh
+curl http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/state
+curl http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/packs
+curl -X POST http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/refresh
+```
+
+`/state` 里的 `spend1h`、`tier`、`diagnostics.lastError` 能直接看出数据源和档位状态。
