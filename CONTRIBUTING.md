@@ -34,6 +34,10 @@ unless a build step is justified in an issue.
   Module Loader bundle (`window.__ModuleLoader__.load({ id, factory })`) with
   no relative imports: DSH serves each client bundle as one script and does not
   resolve sibling chunks for synchronous imports.
+- `lib/terminal.js` / `lib/terminal-cli.js` + `bin/dsh-spend-wallpaper.mjs` —
+  the terminal surface. `terminal.js` must stay pure (no DSH imports, no
+  filesystem/process access); all state loading and animation lives in
+  `terminal-cli.js`.
 - `lib/assets/packs/default/` — built-in pack; media is committed (users install
   through `link:` and expect the pack to work without a build).
 - `test/` — Node test-runner files (`*.test.mjs`).

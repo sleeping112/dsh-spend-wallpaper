@@ -96,7 +96,24 @@
 
 ---
 
-## 5. 换成自己的壁纸（可选）
+## 5. 在终端里看（不用打开 GUI）
+
+同一个包附带一个终端 CLI，读取插件的状态文件：
+
+```sh
+# 在仓库目录直接运行
+node bin\dsh-spend-wallpaper.mjs status          # 状态卡：余额/档位/数据源
+node bin\dsh-spend-wallpaper.mjs render          # 全屏 ANSI 动画，按 q 退出
+node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览一帧
+```
+
+也可以用 `npm link` 之后全局调用 `dsh-spend-wallpaper status`。完整说明见 [terminal.md](terminal.md)。
+
+> 注意：终端渲染的是字符画，不是终端模拟器背景；实时数据需要 DSH 正在运行。
+
+---
+
+## 6. 换成自己的壁纸（可选）
 
 1. 建目录 `C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack\`；
 2. 放 5 张图（每档一张）和 `manifest.json`，格式照抄
@@ -113,7 +130,7 @@
 
 ---
 
-## 6. 常见问题
+## 7. 常见问题
 
 | 现象 | 处理 |
 |---|---|
@@ -126,7 +143,7 @@
 
 ---
 
-## 7. 开发者快速检查（可选）
+## 8. 开发者快速检查（可选）
 
 端口以 DSH 实际打开的 URL 为准（例如 `http://127.0.0.1:65239`）：
 

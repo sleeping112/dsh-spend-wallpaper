@@ -315,6 +315,8 @@ html[data-dswp-mode="full"] body {
 dsh-spend-wallpaper/
 ├─ package.json                # dsh.bundle.patch + dsh.client（无运行时依赖）
 ├─ cordis.patch.yml            # insert [{ id: spend-wallpaper, name: dsh-spend-wallpaper }]
+├─ bin/
+│  └─ dsh-spend-wallpaper.mjs  # 终端 CLI 入口（status / render）
 ├─ lib/                        # 发布内容（宿主直接加载，无编译步骤）
 │  ├─ index.js                 # Host：Config + apply + WallpaperRuntime + 采样/档位/快照
 │  ├─ money.js                 # 十进制字符串 ↔ 整数微单位
@@ -325,13 +327,15 @@ dsh-spend-wallpaper/
 │  ├─ store.js                 # $DSH_HOME 状态持久化（原子写 + 防抖）
 │  ├─ http.js                  # /state /packs /assets /refresh
 │  ├─ client.js                # Client Module Loader bundle（自包含，无 import）
+│  ├─ terminal.js              # ANSI 字符画/状态卡渲染（纯函数）
+│  ├─ terminal-cli.js          # status/render 命令实现
 │  └─ assets/packs/default/    # 5 × WebP + 5 × WebM + manifest.json
-├─ test/                       # node --test 测试（host / client / assets）
+├─ test/                       # node --test 测试（host / client / assets / terminal）
 ├─ scripts/
 │  ├─ gen-assets.py            # 程序化生成素材（Pillow + ffmpeg）
 │  ├─ pack-check.mjs           # 素材包校验 CLI
 │  └─ build-client.mjs         # client bundle 包装校验
-├─ docs/                       # design.md（本文）+ packs.md
+├─ docs/                       # quickstart.md + terminal.md + design.md（本文）+ packs.md
 ├─ examples/profile-patch.yml  # manual 模式的 profile overlay 示例
 ├─ .github/workflows/ci.yml    # Node 20/22 CI
 ├─ README.md  CONTRIBUTING.md  SECURITY.md  CHANGELOG.md
@@ -344,7 +348,12 @@ dsh-spend-wallpaper/
 {
   "type": "module",
   "main": "lib/index.js",
-  "exports": { ".": "./lib/index.js", "./client": "./lib/client.js" },
+  "bin": { "dsh-spend-wallpaper": "./bin/dsh-spend-wallpaper.mjs" },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./terminal": "./lib/terminal-cli.js"
+  },
   "dsh": {
     "manifestVersion": 1,
     "bundle": { "patch": "./cordis.patch.yml" },
@@ -421,6 +430,30 @@ window.__ModuleLoader__.load({
   curl http://127.0.0.1:<port>/plugins/dsh-spend-wallpaper/state
   ```
 
+### 7.6 终端 surface（M0.1）
+
+终端没有 DOM，`dsh.client` 那套渲染用不上。为了让"在终端跑 DSH"或"只想在 shell 里看消耗"的场景可用，增加一个**纯读取**的 CLI：
+
+```
+bin/dsh-spend-wallpaper.mjs
+   └─ lib/terminal-cli.js   # 参数解析、状态读取、动画循环
+        └─ lib/terminal.js  # 纯函数：ANSI 字符画 / 状态卡 / 宽字符处理
+```
+
+命令：
+
+| 命令 | 作用 |
+|---|---|
+| `status [--json]` | 读取 `state.json`，打印余额/档位/下一档/数据源/诊断；`--json` 供脚本/提示符消费 |
+| `render [--tier N] [--once] [--fps N] [--color truecolor\|256\|none] [--width/--height]` | 把档位渲染成 ANSI 半块字符画；TTY 下默认全屏动画（`q` 退出），非 TTY 或 `--once` 只输出一帧 |
+
+关键设计：
+
+- **状态来源单一**：Host 在 `persist()` 中额外写入 `spendMicro`、`windowReason`、`source`、`status`、`updatedAt` 和一份配置快照（阈值/方向/素材包等），CLI 只读这一个文件，不依赖 DSH API、也不需要 YAML 解析器。
+- **渲染与 Web 解耦**：`lib/terminal.js` 不 import 任何 `@deepseek-ai/*`，用与内置素材一致的 5 套调色板（渐变 + 波浪 + 星光 + 闪电）生成字符画；`--color none` 时按帧内亮度归一化输出 ASCII，便于日志。
+- **不谎报**：`--tier` 只影响预览，状态行会显示指定档位；终端渲染是简化情绪，不是终端模拟器的背景图。
+- **限制**：颜色/波浪来自内置调色板，暂不从用户素材包取色；极慢终端建议降 `--fps`/`--width`。
+
 ---
 
 ## 8. 配置项
@@ -463,6 +496,7 @@ window.__ModuleLoader__.load({
 | 内容 | 状态 |
 |---|---|
 | Host 纯逻辑单测：money / tier / window / packs / API 基址 | ✅ `npm test`（`test/host.test.mjs`） |
+| 终端渲染与 CLI：几何/颜色/状态读取/预览 | ✅ `npm test`（`test/terminal.test.mjs`） |
 | Client bundle 加载 + apply + dispose 烟雾测试 | ✅ `npm test`（`test/client.test.mjs`） |
 | 内置素材存在性/尺寸/魔数检查 | ✅ `npm test`（`test/assets.test.mjs`） |
 | 组合树装载 + Config schema 投影 | ✅ `dsh --profile <p> --dump-config(-schema)` |
@@ -478,6 +512,7 @@ window.__ModuleLoader__.load({
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | **M0 技术验证** | Host 采样/窗口/档位/HTTP + Client 壁纸层 + 内置静态素材 + manual source | ✅ 完成 |
+| **M0.1 终端 surface** | `status` / `render` CLI、状态文件扩展、ANSI 渲染测试 | ✅ 完成 |
 | **M1 可用** | 自绘设置页（状态卡/预览/锁定）+ 动态视频启用确认 + full 模式调参 + i18n + 视觉回归 | ⏳ |
 | **M2 完整** | 用户素材包热加载、素材诊断面板、性能调优、发布插件市场 | ⏳ |
 
@@ -551,7 +586,8 @@ window.__ModuleLoader__.load({
 | 素材路由 | GET `0-calm.webp` / `2-swell.webm` | `200`，正确 content-type / ETag / `max-age=3600` |
 | 安全栅栏 | `..%2F..%2Fpackage.json`；`Sec-Fetch-Site: cross-site` | `404` / `403` |
 | 刷新 | `POST /plugins/dsh-spend-wallpaper/refresh` | 返回最新快照 |
-| Host 单测 | `npm test` | host / client / assets 全部通过 |
+| Host 单测 | `npm test` | host / client / assets / terminal 全部通过 |
+| 终端 CLI | `node bin/dsh-spend-wallpaper.mjs status --json` / `render --tier 4 --once` | 读取快照、输出状态卡与 ANSI 字符画 |
 | Client 烟雾测试 | `npm test`（`test/client.test.mjs`） | factory → apply → state 渲染（full 模式、video 帧、样式注入）→ dispose 清理全部通过 |
 | 素材检查 | Pillow 打开 WebP；`ffprobe` 检查 WebM | 2560×1440 WebP；1280×720 VP9、6.000s |
 

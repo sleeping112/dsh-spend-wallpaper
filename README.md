@@ -3,6 +3,7 @@
 按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置一套程序化生成的「深海情绪」素材（5 档 × 静态 WebP + 动态 WebM 循环视频），也支持自定义素材包。
 
 - 快速上手：[docs/quickstart.md](docs/quickstart.md)
+- 终端使用：[docs/terminal.md](docs/terminal.md)
 - 设计文档：[docs/design.md](docs/design.md)
 - 素材包作者指南：[docs/packs.md](docs/packs.md)
 - 变更记录：[CHANGELOG.md](CHANGELOG.md)
@@ -18,6 +19,7 @@
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
 - **自定义素材包**：`$DSH_HOME/spend-wallpaper/packs/<id>/manifest.json`，用户包可覆盖同名内置包。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
+- **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
 
 ## 安装
 
@@ -95,22 +97,40 @@ python scripts/gen-assets.py --skip-video   # 只出静态图
 ## 项目结构
 
 ```
-lib/                 发布内容：host 模块 + 自包含 client bundle + 内置素材
-test/                node --test 测试（host / client / assets）
+bin/                 终端 CLI 入口（dsh-spend-wallpaper status / render）
+lib/                 发布内容：host 模块 + client bundle + 终端渲染器 + 内置素材
+test/                node --test 测试（host / client / assets / terminal）
 scripts/             gen-assets.py、pack-check.mjs、build-client.mjs
-docs/                design.md、packs.md
+docs/                quickstart.md、terminal.md、design.md、packs.md
 examples/            manual 模式 profile overlay
 .github/workflows/   CI（Node 20 / 22）
 ```
 
 本项目没有编译步骤：`lib/` 是手写 ESM 源码，`lib/client.js` 是单个自包含的 DSH client bundle。
 
+## 终端使用
+
+DSH 在终端里跑（或你只想在 shell 里看消耗）时，用同一个包里的 CLI：
+
+```sh
+# 直接运行（无需全局安装）
+node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs status
+node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs render
+
+# 或 npm link 之后全局使用
+dsh-spend-wallpaper status --json
+dsh-spend-wallpaper render --tier 4 --once
+```
+
+完整说明（动画、颜色模式、提示符集成、限制）见 [docs/terminal.md](docs/terminal.md)。
+
 ## 开发与测试
 
 ```sh
-npm test                      # node --test：host + client + assets
+npm test                      # node --test：host + client + assets + terminal
 node scripts/build-client.mjs # 校验 client bundle 包装形态
 node scripts/pack-check.mjs   # 校验内置素材包（也可传任意素材包目录）
+npm run demo                  # 终端渲染一帧示例
 ```
 
 HTTP 接口（同源、只读为主）：
@@ -133,7 +153,8 @@ HTTP 接口（同源、只读为主）：
   - `GET .../assets/default/0-calm.webp` → `200 image/webp`，`.webm` → `200 video/webm`，带 ETag / `max-age=3600`；目录穿越 → `404`，`Sec-Fetch-Site: cross-site` → `403`；
   - `POST .../refresh` → 返回刷新后的快照；
   - `source=manual, manualSpend=0.40` → `tier=2「起浪」`、`next=1.50「浪涌」`，素材 URL 指向 `2-swell.webm`。
-- 自动化测试：`npm test` 覆盖 host 逻辑、client bundle 生命周期（stub DOM）、内置素材完整性。
+- 自动化测试：`npm test` 覆盖 host 逻辑、client bundle 生命周期（stub DOM）、内置素材完整性与终端渲染/CLI。
+- 终端 surface：`npm run demo` 与 `render --tier N --once` 在本机 PowerShell 实测可输出 ANSI 真彩色/单色字符画；`status` 能读取 Host 写入的快照。
 - 素材：5 × 2560×1440 WebP（约 220–310 KB）+ 5 × 1280×720 VP9 WebM（6s，约 90–111 KB），全部由 `scripts/gen-assets.py` 程序化生成。
 
 **未验证**：真实浏览器里的视觉效果（frame/full 两种模式、视频自动播放、reduced-motion、Desktop 载体的 file:// fetch 桥）。这些属于 M1 的浏览器回归测试。
@@ -145,6 +166,7 @@ HTTP 接口（同源、只读为主）：
 - 同一账号在其它设备上的消耗会计入余额差（这是"账号消耗"而非"本机消耗"）。
 - `cost-meter` 适配目前不参与计算：`dsh-cost-meter@1.9.x` 账本只保留按天/按会话聚合，没有逐次调用时间戳，无法重建 1 小时窗口。
 - 暂不做 Windows 桌面壁纸（设计文档中的 v2 适配器）。
+- 终端里的 `render` 是字符画简化版（渐变+波浪+星光），不是终端模拟器的真实背景图；详见 [docs/terminal.md](docs/terminal.md)。
 
 ## License
 

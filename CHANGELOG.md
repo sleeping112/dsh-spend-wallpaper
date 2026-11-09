@@ -6,11 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-10
+
 ### Added
 
 - `docs/quickstart.md`: 5-minute Chinese quick-start guide (install via the
   plugin manager, verify all five tiers with `source: manual`, daily settings,
   custom packs and troubleshooting).
+- Terminal surface: `dsh-spend-wallpaper status` and `render` commands
+  (ANSI truecolor/256/monochrome half-block artwork, full-screen animation,
+  `--tier`/`--once`/`--fps`/`--color` options) plus `--json` output for shell
+  prompts and scripts. The host now persists `spendMicro`, source/status,
+  `updatedAt` and a config snapshot so the CLI works without the DSH API.
+- `docs/terminal.md` terminal usage guide.
 
 ## [0.1.0] - 2026-11-10
 
