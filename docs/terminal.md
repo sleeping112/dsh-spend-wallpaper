@@ -37,6 +37,10 @@ node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs status
 node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs render
 ```
 
+> 如果 `PATH` 里没有 `node`，可以用 DSH 自带的运行时：
+> `%USERPROFILE%\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe`
+> （把上面的 `node` 换成这个完整路径即可）。
+
 ### 方式 B：PowerShell 里加个别名
 
 在 `$PROFILE` 里加：
