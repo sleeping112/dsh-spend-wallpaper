@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-10
+
+### Fixed (quick-switch panel audit)
+
+- Previews now have a real 15 s expiry timer; previously they could outlive the
+  15 s window until the next 20 s poll, and the chip state was already wrong.
+- Switching packs in the panel now refetches `/packs`, so preview labels and
+  asset URLs never come from the previously selected pack.
+- With `direction: rich`, preview chips now show the mapped tier labels in the
+  right order (tier 0 = worst meal) and preview the matching asset.
+- Appearance sliders (opacity/scrim/blur/mode) now take effect while a tier is
+  being previewed instead of being ignored until preview expiry.
+- Switching pack / direction / media, resetting, disabling the wallpaper or
+  refreshing clears an active preview instead of leaving a stale frame on screen.
+- `clearPreview()` no longer re-creates the live wallpaper frame when nothing is
+  previewing (avoids a fade/flicker on every pack/direction/media click).
+- The panel keeps its scroll position across the 20 s poll re-render and does
+  not rebuild while a slider is being dragged.
+- Async pack fetches after plugin disposal no longer touch the removed panel.
+- The panel is max-width constrained on narrow windows.
+- `POST /config` rejects unknown pack ids instead of silently falling back.
+- Added `test/panel.test.mjs` covering open/preview/expiry/rich mapping/pack
+  refresh/slider posting (suite now 51 tests).
+
 ## [0.8.0] - 2026-11-10
 
 ### Added
