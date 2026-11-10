@@ -1,7 +1,9 @@
 # DSH 插件设计：按「最近 1 小时余额消耗」更换壁纸
 
 > 包名：`dsh-spend-wallpaper`（中文名：余额壁纸）
-> 本文件位于仓库 `docs/design.md`；安装、配置、素材包格式见 [README](../README.md) 与 [packs.md](packs.md)。
+> 本文件位于仓库 `docs/design.md`；安装、配置、场景上传见 [README](../README.md)、[scenes.md](scenes.md)。
+>
+> **0.10 变更**：已移除「素材包 / manifest」概念，改为每档一个可上传场景（图片/视频），档位数量 2–8、阈值可编辑；下文涉及 packs/manifest 的段落属于历史设计记录。
 > 本文基于本机 DSH 0.2.2-rc.1 实际安装（`D:\deepseek\resources\app.asar`）与已安装的 `dsh-cost-meter@1.9.46` 的 API 形态设计。
 > **最终决策（2026-11-09）**：只做 DSH 应用内背景；默认 `direction: poor`；默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`；内置程序化生成的素材（0.6 起默认是 Q 版「DeepSeek 干饭」包，另附深海情绪包）。M0 已实现并跑通，仓库已按完整 Git 项目组织（测试、CI、素材包校验、文档）。
 
