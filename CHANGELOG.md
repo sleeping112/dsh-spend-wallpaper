@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-10
+
+### Changed
+
+- The sampling interval is no longer a row of preset chips (60/120/180/300/600s);
+  the quick panel now offers a fill-in number field for any value in 60–600
+  seconds (blank shows the default). The value is still applied immediately by
+  restarting the sample timer.
+
 ## [0.10.1] - 2026-11-10
 
 ### Added

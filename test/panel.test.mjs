@@ -145,6 +145,12 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   inputs[1].dispatch('change')
   await flush()
   assert.ok(posts.some((post) => Array.isArray(post.thresholds) && post.thresholds[1] === '0.08'), 'threshold edit is posted')
+  const sampleInput = panel.allNodes().find((n) => n.className === 'dswp-param')
+  assert.ok(sampleInput, 'sampling interval is a fill-in field')
+  sampleInput.value = '90'
+  sampleInput.dispatch('change')
+  await flush()
+  assert.ok(posts.some((post) => post.sampleSeconds === 90), 'sampling interval edit is posted')
 
   findButton('空碗').click()
   await flush()
