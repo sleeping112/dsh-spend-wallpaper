@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-10
+
+### Fixed
+
+- Inner translucent surfaces now keep a readable minimum alpha (composer 55%,
+  cards 62%, code 58%, document preview 65%) even when `surfaceOpacity` is
+  dragged very low; they still follow the slider above those floors.
+
 ## [0.11.0] - 2026-11-10
 
 ### Changed
