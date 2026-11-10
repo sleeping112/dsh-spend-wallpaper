@@ -14,6 +14,7 @@ import { resolveTier, mapPackIndex, parseTierTable, nextThreshold } from '../lib
 import { appendSample, trimSamples, windowSpend } from '../lib/window.js'
 import { loadPacks, resolveAsset, resolvePack, validateManifest } from '../lib/packs.js'
 import { normalizeApiBase, readCostMeterSpend } from '../lib/sources.js'
+import { sanitizeOverrides, sanitizeStoredOverrides } from '../lib/control.js'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -229,4 +230,38 @@ test('normalizeApiBase only accepts the official origin', () => {
   assert.equal(normalizeApiBase('http://api.deepseek.com'), null)
   assert.equal(normalizeApiBase('https://evil.example.com'), null)
   assert.equal(normalizeApiBase('not a url'), null)
+})
+
+// ------------------------------------------------------------------ control
+
+test('sanitizeOverrides accepts presentation fields', () => {
+  const result = sanitizeOverrides({
+    pack: 'deepseek-eats', mode: 'full', media: 'auto', direction: 'poor',
+    scrim: 0.1, dim: 0.03, blur: 4, surfaceOpacity: 0.5, lockedTier: '2', enabled: true,
+  })
+  assert.equal(result.ok, true, result.errors.join('; '))
+  assert.equal(result.overrides.pack, 'deepseek-eats')
+  assert.equal(result.overrides.mode, 'full')
+  assert.equal(result.overrides.scrim, 0.1)
+  assert.equal(result.overrides.lockedTier, '2')
+})
+
+test('sanitizeOverrides rejects invalid values', () => {
+  assert.equal(sanitizeOverrides({ mode: 'diagonal' }).ok, false)
+  assert.equal(sanitizeOverrides({ scrim: 2 }).ok, false)
+  assert.equal(sanitizeOverrides({ pack: '../evil' }).ok, false)
+  assert.equal(sanitizeOverrides({ lockedTier: '99' }).ok, false)
+  assert.equal(sanitizeOverrides({ surprise: true }).ok, false)
+})
+
+test('sanitizeOverrides reset clears overrides and ignores unknown data', () => {
+  const result = sanitizeOverrides({ reset: true })
+  assert.equal(result.ok, true)
+  assert.deepEqual(result.overrides, {})
+})
+
+test('sanitizeStoredOverrides keeps only valid persisted values', () => {
+  assert.deepEqual(sanitizeStoredOverrides({ mode: 'frame', scrim: 0.3 }), { mode: 'frame', scrim: 0.3 })
+  assert.deepEqual(sanitizeStoredOverrides({ mode: 'bad' }), {})
+  assert.deepEqual(sanitizeStoredOverrides(null), {})
 })

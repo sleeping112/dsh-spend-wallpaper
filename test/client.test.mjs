@@ -168,6 +168,12 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
   const style = elements.find((element) => element.tagName === 'STYLE' && element.dataset.pluginCss === 'dsh-spend-wallpaper/client.css')
   assert.ok(style, 'the plugin stylesheet must be injected')
 
+  const quickButton = elements.find((element) => element.attributes.id === 'dswp-quick')
+  assert.ok(quickButton, 'a quick-switch button must be injected')
+  const quickPanel = elements.find((element) => element.attributes.id === 'dswp-panel')
+  assert.ok(quickPanel, 'a quick-switch panel must be injected')
+  assert.ok(quickPanel.attributes.hidden !== undefined, 'the panel starts hidden')
+
   assert.equal(typeof disposer, 'function')
   disposer()
   assert.equal(documentStub.documentElement.dataset.dswp, undefined, 'disposer must remove rendering attributes')

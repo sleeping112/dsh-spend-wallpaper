@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-10
+
+### Added
+
+- **Quick-switch panel**: a floating 🐋 button opens an in-app panel to switch
+  pack, full/frame mode, static/dynamic media, direction, preview any tier,
+  lock the current tier, refresh data, toggle the wallpaper or reset overrides.
+  Changes apply instantly and persist in the plugin state file.
+- `POST /plugins/dsh-spend-wallpaper/config` host endpoint with a whitelist
+  (`lib/control.js`) for presentation overrides; `{reset:true}` clears them.
+  `/packs` now returns resolved asset URLs so the client can preview tiers
+  locally for 15 seconds without touching host state.
+- Overrides survive restarts via `state.json` (`overrides` field) and take
+  precedence over the profile config.
+
 ## [0.6.0] - 2026-11-10
 
 ### Added

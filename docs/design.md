@@ -319,6 +319,16 @@ html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp
 
 启动时检查：`#root` 存在；能读到 `--dsw-alias-bg-base`；探测失败自动用 `frame`（只做 body padding + 圆角），设置页提示。宿主升级最坏情况是"看不到壁纸"，不会破坏界面。
 
+### 6.5 快捷切换（0.7）
+
+右下角固定一个 🐋 按钮，点开是自绘面板（纯 DOM，不依赖 React/slot）：
+
+- 素材包、`full/frame`、`auto/static/dynamic`、`poor/rich`、五档预览、锁定档位、刷新数据、恢复默认、开关壁纸；
+- 预览是**纯客户端**的：按 `/packs` 返回的素材 URL 临时显示 15 秒，不写 Host 状态，也不影响自动切换；
+- 面板改动通过 `POST /plugins/dsh-spend-wallpaper/config` 写回 Host。
+
+Host 侧新增 `control.js` 做白名单校验（pack/mode/media/direction/enabled/lockedTier/scrim/dim/blur/surfaceOpacity），`applyOverrides()` 把接受的值合并到 `readConfig()` 之上（profile 配置 < 快捷覆盖），并持久化到 `state.json` 的 `overrides`；`{reset:true}` 清除覆盖、回落到 profile 配置。这样换壁纸不再需要编辑 YAML 或重启插件。HTTP 路由仍走同源栅栏。
+
 ---
 
 ## 7. 插件工程（已实现）

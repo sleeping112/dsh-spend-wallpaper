@@ -18,6 +18,7 @@
 - **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
 - **两种显示模式**：`full`（默认，壁纸铺满整个窗口、界面半透明）与 `frame`（相框，仅在四周露出壁纸，最保守）。
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
+- **快捷切换**：右下角 🐋 按钮打开面板，直接切素材包 / 铺满-相框 / 动态-静态 / 方向 / 预览档位 / 锁定 / 刷新 / 恢复默认；改动即时生效并持久化在插件状态里，不用改 YAML 或重启。
 - **五档动画场景**：默认「DeepSeek 干饭」——花得越少吃越香：满汉全席 → 拉面 → 咖喱饭 → 白饭梅干 → 空碗流泪；另有「深海情绪」极光/鲸群/紫潮/风暴/海啸。每档一棵静态 WebP + 一段循环 WebM。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
 - **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
@@ -142,6 +143,7 @@ HTTP 接口（同源、只读为主）：
 | `GET /plugins/dsh-spend-wallpaper/packs` | 已发现素材包 |
 | `GET /plugins/dsh-spend-wallpaper/assets/<pack>/<file>` | 素材（ETag + `max-age=3600`） |
 | `POST /plugins/dsh-spend-wallpaper/refresh` | 立即采样（10 秒限流） |
+| `POST /plugins/dsh-spend-wallpaper/config` | 快捷切换：`{pack, mode, media, direction, scrim, dim, blur, surfaceOpacity, enabled, lockedTier}`；`{reset:true}` 清除覆盖 |
 
 `source=manual` + `POST /refresh` 可以在不真实烧钱的情况下把所有档位过一遍。
 
