@@ -1,6 +1,6 @@
 # dsh-spend-wallpaper · 余额壁纸
 
-按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置一套程序化生成的「深海情绪」素材（5 档 × 静态 WebP + 动态 WebM 循环视频），也支持自定义素材包。
+按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置两套程序化生成素材：默认的 **DeepSeek 干饭（Q 版鲸娘吃饭）** 与 **深海情绪**（5 档 × 静态 WebP + 动态 WebM 循环视频），也支持自定义素材包。
 
 - 快速上手：[docs/quickstart.md](docs/quickstart.md)
 - 终端使用：[docs/terminal.md](docs/terminal.md)
@@ -18,7 +18,7 @@
 - **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
 - **两种显示模式**：`full`（默认，壁纸铺满整个窗口、界面半透明）与 `frame`（相框，仅在四周露出壁纸，最保守）。
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
-- **五档电影感场景**：极光冰海 / 月下鲸群 / 紫潮落日 / 灯塔风暴 / 赤潮海啸，每档一棵静态 WebP + 一段循环 WebM。
+- **五档动画场景**：默认「DeepSeek 干饭」——花得越少吃越香：满汉全席 → 拉面 → 咖喱饭 → 白饭梅干 → 空碗流泪；另有「深海情绪」极光/鲸群/紫潮/风暴/海啸。每档一棵静态 WebP + 一段循环 WebM。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
 - **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
 
@@ -65,8 +65,8 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
 | `direction` | `poor` | `poor` / `rich` |
 | `mode` | `full` | `full`（铺满）/ `frame`（相框） |
 | `media` | `auto` | `auto` / `static` / `dynamic` |
-| `pack` | `default` | 素材包 id |
-| `scrim` / `dim` / `blur` | `.20` / `.05` / `0` | 可读性、氛围与壁纸模糊 |
+| `pack` | `deepseek-eats` | 素材包 id：`deepseek-eats`（默认，Q 版干饭）/ `default`（深海情绪） |
+| `scrim` / `dim` / `blur` | `.10` / `.03` / `0` | 可读性、氛围与壁纸模糊 |
 | `surfaceOpacity` | `.50` | `full` 模式面板不透明度（越低壁纸越明显） |
 | `inset` / `radius` | `16` / `16` | `frame` 模式相框 |
 | `transitionMs` | `600` | 交叉淡入时长 |
@@ -150,7 +150,7 @@ HTTP 接口（同源、只读为主）：
 - 组合装载：临时 profile 中 `dsh --profile <p> --dump-config` 出现 `spend-wallpaper` 行；`--dump-config-schema` 成功导入 `Config` 并投影出 volatile 字段（说明 `@deepseek-ai/schemastery` 可由宿主 runtime resolution 解析）。
 - 真实宿主：`dsh --profile <p> --port 0 --no-open` 启动后
   - `GET /plugins/dsh-spend-wallpaper/state` 返回完整快照（未配置数据源时 `status: unavailable`，不会报错刷屏）；
-  - `GET /plugins/dsh-spend-wallpaper/packs` 列出内置「深海情绪」5 档；
+  - `GET /plugins/dsh-spend-wallpaper/packs` 列出内置 `default` 与 `deepseek-eats` 两套 5 档素材；
   - `GET .../assets/default/0-calm.webp` → `200 image/webp`，`.webm` → `200 video/webm`，带 ETag / `max-age=3600`；目录穿越 → `404`，`Sec-Fetch-Site: cross-site` → `403`；
   - `POST .../refresh` → 返回刷新后的快照；
   - `source=manual, manualSpend=0.40` → `tier=2「起浪」`、`next=1.50「浪涌」`，素材 URL 指向 `2-swell.webm`。

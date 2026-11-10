@@ -25,7 +25,7 @@
 
 如果窗口背景没有立刻变化：先按 `Ctrl+R` 刷新页面；仍然没有就完全退出并重启 DSH（部分 profile 没开 HMR 时需要重启）。
 
-> 装好后不用改任何配置，**默认就会显示第 0 档「无波」壁纸**（`full` 模式：壁纸铺满整个窗口，界面面板半透明）。
+> 装好后不用改任何配置，**默认就会显示「DeepSeek 干饭」第 0 档「满汉全席」壁纸**（`full` 模式：壁纸铺满整个窗口，界面面板半透明）。想换回深海风：配置 `pack: default`。
 
 ---
 
@@ -88,8 +88,8 @@
     mode: frame
     media: auto
     thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
-    scrim: 0.20        # 壁纸上的暗化（0–1），太大就调小
-    dim: 0.05
+    scrim: 0.10        # 壁纸上的暗化（0–1），太大就调小
+    dim: 0.03
     inset: 16          # 相框边距
     radius: 16         # 画面圆角
 ```
@@ -117,7 +117,7 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 
 1. 建目录 `C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack\`；
 2. 放 5 张图（每档一张）和 `manifest.json`，格式照抄
-   `E:\workspace\dsh-spend-wallpaper\lib\assets\packs\default\manifest.json`；
+   `E:\workspace\dsh-spend-wallpaper\lib\assets\packs\default\manifest.json`（或 `deepseek-eats`）；
 3. 校验：
 
    ```sh

@@ -6,6 +6,26 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-10
+
+### Added
+
+- New built-in pack **`deepseek-eats`** (now the default): a chibi-anime
+  DeepSeek whale at the dinner table. Spend less, eat better — five tiers go
+  from a grand feast, ramen, curry and plain rice down to an empty bowl with
+  tears. Each tier ships a 2560×1440 WebP still and a short VP9 loop with
+  blinking, steam, drifting petals/hearts and rain.
+- `scripts/gen-anime-assets.py` generator for the new pack (PIL/numpy only, no
+  third-party art), plus the existing `default` "Deep Sea Mood" pack remains
+  available via `pack: default`.
+- Asset tests now validate every shipped pack; CI pack-check runs on both.
+
+### Changed
+
+- Default `pack` is `deepseek-eats`.
+- Default `scrim`/`dim` lowered to 0.10/0.03 in the shipped config; the anime
+  pack is bright and pastel, so it needs less darkening than the sea pack.
+
 ## [0.5.0] - 2026-11-10
 
 ### Changed

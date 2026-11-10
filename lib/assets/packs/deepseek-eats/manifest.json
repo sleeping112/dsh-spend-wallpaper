@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "id": "deepseek-eats",
+  "name": {
+    "zh": "DeepSeek 干饭",
+    "en": "DeepSeek Eats"
+  },
+  "description": {
+    "zh": "越省越香：DeepSeek 鲸在餐桌前的五档表情。花得越少吃得越香；花多了只能空碗流泪。",
+    "en": "Chibi DeepSeek whale at the dinner table. Spend less, eat better; spend a lot and the bowl is empty."
+  },
+  "author": "dsh-spend-wallpaper",
+  "license": "CC0-1.0 (generated artwork)",
+  "direction": "poor",
+  "tiers": [
+    {
+      "id": "feast",
+      "min": "0",
+      "label": {
+        "zh": "满汉全席",
+        "en": "Grand Feast"
+      },
+      "static": "0-feast.webp",
+      "dynamic": {
+        "type": "video",
+        "src": "0-feast.webm",
+        "poster": "0-feast.webp"
+      }
+    },
+    {
+      "id": "ramen",
+      "min": "0.05",
+      "label": {
+        "zh": "拉面自由",
+        "en": "Ramen Day"
+      },
+      "static": "1-ramen.webp",
+      "dynamic": {
+        "type": "video",
+        "src": "1-ramen.webm",
+        "poster": "1-ramen.webp"
+      }
+    },
+    {
+      "id": "curry",
+      "min": "0.30",
+      "label": {
+        "zh": "咖喱饭",
+        "en": "Curry Rice"
+      },
+      "static": "2-curry.webp",
+      "dynamic": {
+        "type": "video",
+        "src": "2-curry.webm",
+        "poster": "2-curry.webp"
+      }
+    },
+    {
+      "id": "rice",
+      "min": "1.50",
+      "label": {
+        "zh": "白饭梅干",
+        "en": "Rice & Pickle"
+      },
+      "static": "3-rice.webp",
+      "dynamic": {
+        "type": "video",
+        "src": "3-rice.webm",
+        "poster": "3-rice.webp"
+      }
+    },
+    {
+      "id": "empty",
+      "min": "6.00",
+      "label": {
+        "zh": "空碗",
+        "en": "Empty Bowl"
+      },
+      "static": "4-empty.webp",
+      "dynamic": {
+        "type": "video",
+        "src": "4-empty.webm",
+        "poster": "4-empty.webp"
+      }
+    }
+  ],
+  "defaults": {
+    "scrim": 0.12,
+    "dim": 0.03,
+    "blur": 0,
+    "transitionMs": 600
+  }
+}

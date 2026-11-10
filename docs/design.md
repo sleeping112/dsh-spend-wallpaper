@@ -3,7 +3,7 @@
 > 包名：`dsh-spend-wallpaper`（中文名：余额壁纸）
 > 本文件位于仓库 `docs/design.md`；安装、配置、素材包格式见 [README](../README.md) 与 [packs.md](packs.md)。
 > 本文基于本机 DSH 0.2.2-rc.1 实际安装（`D:\deepseek\resources\app.asar`）与已安装的 `dsh-cost-meter@1.9.46` 的 API 形态设计。
-> **最终决策（2026-11-09）**：只做 DSH 应用内背景；默认 `direction: poor`；默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`；内置一套程序化生成的素材。M0 已实现并跑通，仓库已按完整 Git 项目组织（测试、CI、素材包校验、文档）。
+> **最终决策（2026-11-09）**：只做 DSH 应用内背景；默认 `direction: poor`；默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`；内置程序化生成的素材（0.6 起默认是 Q 版「DeepSeek 干饭」包，另附深海情绪包）。M0 已实现并跑通，仓库已按完整 Git 项目组织（测试、CI、素材包校验、文档）。
 
 ---
 
@@ -204,6 +204,8 @@ HTTP 契约：
 
 USD 账号默认：`0 / 0.01 / 0.05 / 0.2 / 0.8`（可改）。
 
+> 档位名称与画面由素材包的 `tiers[].label` 决定。默认 `deepseek-eats` 包的五档是：满汉全席 / 拉面自由 / 咖喱饭 / 白饭梅干 / 空碗；`default` 深海包沿用上表的无波…海啸命名。
+
 ### 5.2 迟滞、驻留与过渡
 
 ```ts
@@ -231,7 +233,7 @@ return { index: target, changedAt: now }
 
 ### 6.1 素材包规范
 
-目录：内置 `lib/assets/packs/default/`；用户 `$DSH_HOME/spend-wallpaper/packs/<id>/`（同名覆盖内置）。
+目录：内置 `lib/assets/packs/<id>/`（`deepseek-eats` 为默认 Q 版干饭包，`default` 为深海情绪包）；用户 `$DSH_HOME/spend-wallpaper/packs/<id>/`（同名覆盖内置）。
 
 ```jsonc
 {
@@ -482,9 +484,9 @@ bin/dsh-spend-wallpaper.mjs
 | 档位 | `direction` | poor | poor / rich |
 | 档位 | `hysteresis` | 0.25 | 迟滞比例 |
 | 档位 | `minDwellSeconds` | 600 | 最短驻留 |
-| 素材 | `pack`, `media` | default, auto | 素材包 / static / dynamic / auto |
+| 素材 | `pack`, `media` | deepseek-eats, auto | 素材包（deepseek-eats / default / 自定义）/ static / dynamic / auto |
 | 渲染 | `mode` | full | full（铺满）/ frame（相框） |
-| 渲染 | `scrim`, `dim`, `blur` | .20 / .05 / 0 | 可读性与氛围 |
+| 渲染 | `scrim`, `dim`, `blur` | .10 / .03 / 0 | 可读性与氛围 |
 | 渲染 | `surfaceOpacity` | .50 | full 模式面板不透明度 |
 | 渲染 | `inset`, `radius` | 16 / 16 | frame 模式相框 |
 | 其它 | `lockedTier`, `manualSpend` | "" / "0" | 锁定档位 / manual 源 |

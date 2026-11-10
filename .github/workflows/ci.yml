@@ -26,8 +26,10 @@ jobs:
       - name: Validate client bundle shape
         run: node scripts/build-client.mjs
 
-      - name: Validate built-in wallpaper pack
-        run: node scripts/pack-check.mjs
+      - name: Validate built-in wallpaper packs
+        run: |
+          node scripts/pack-check.mjs lib/assets/packs/default
+          node scripts/pack-check.mjs lib/assets/packs/deepseek-eats
 
       - name: Run tests
         run: npm test
