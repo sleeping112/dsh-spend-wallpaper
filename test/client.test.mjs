@@ -158,6 +158,8 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
   assert.equal(documentStub.documentElement.dataset.dswpMode, 'full', 'full mode must be applied')
   assert.equal(documentStub.documentElement.style.props.get('--dswp-fade'), '600ms')
   assert.match(documentStub.documentElement.style.props.get('--dswp-surface') ?? '', /^rgba\(/)
+  assert.match(documentStub.documentElement.style.props.get('--dswp-composer') ?? '', /^rgba\(/)
+  assert.match(documentStub.documentElement.style.props.get('--dswp-document') ?? '', /^rgba\(/)
   assert.ok(fetchCalls >= 1, 'client must poll /state')
 
   const video = elements.find((element) => element.tagName === 'VIDEO')
@@ -167,6 +169,8 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
 
   const style = elements.find((element) => element.tagName === 'STYLE' && element.dataset.pluginCss === 'dsh-spend-wallpaper/client.css')
   assert.ok(style, 'the plugin stylesheet must be injected')
+  assert.match(style.textContent, /--dsw-specific-input-major/)
+  assert.match(style.textContent, /--dsw-alias-bg-document-preview/)
 
   const quickButton = elements.find((element) => element.attributes.id === 'dswp-quick')
   assert.ok(quickButton, 'a quick-switch button must be injected')

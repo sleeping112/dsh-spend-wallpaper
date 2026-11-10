@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-10
+
+### Changed
+
+- Full-bleed mode now also makes **inner surfaces translucent**, so the
+  wallpaper shows through the chat composer and file-edit/code boxes:
+  - `--dsw-specific-input-major` (chat composer + attachment/file cards),
+  - `--dsw-alias-bg-layer-1/2` and `--dsw-alias-bg-module-platform`
+    (file-edit/result cards, layered panels, selectors),
+  - `--dsw-alias-markdown-code-block` (code blocks / edit boxes),
+  - `--dsw-alias-bg-document-preview` (document preview panel).
+  Their alpha is derived from the existing `surfaceOpacity` (slightly more
+  opaque than the shell panels for readability), so the panel opacity slider
+  tunes them too. Menus/dialogs that use layer-2 become translucent as well.
+
 ## [0.10.3] - 2026-11-10
 
 ### Changed
