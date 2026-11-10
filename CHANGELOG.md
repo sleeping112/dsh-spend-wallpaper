@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-10
+
+### Changed
+
+- The statistic window is now a fill-in parameter too (5–180 minutes) instead
+  of preset 15/30/60/90 chips in the quick panel. Values apply immediately and
+  recompute the current tier; blank keeps the profile/default value.
+
 ## [0.10.2] - 2026-11-10
 
 ### Changed

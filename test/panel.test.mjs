@@ -151,6 +151,12 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   sampleInput.dispatch('change')
   await flush()
   assert.ok(posts.some((post) => post.sampleSeconds === 90), 'sampling interval edit is posted')
+  const windowInput = panel.allNodes().filter((n) => n.className === 'dswp-param')[1]
+  assert.ok(windowInput, 'statistic window is a fill-in field')
+  windowInput.value = '30'
+  windowInput.dispatch('change')
+  await flush()
+  assert.ok(posts.some((post) => post.windowMinutes === 30), 'statistic window edit is posted')
 
   findButton('空碗').click()
   await flush()
