@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-11-10
+
+### Fixed (preview sometimes went blank)
+
+- The frame fade-out cleanup timer used a closure over the frame it was
+  scheduled for. If a new frame appeared before that timer fired (rapid tier
+  previews, or previewing right after a live wallpaper change), the older timer
+  removed the *new* frame and the next cleanup removed everything — leaving the
+  wallpaper layer empty until the next update. Cleanup is now a single
+  cancellable timer that always keeps the latest active frame.
+- A stale preview video erroring after a newer preview had started could
+  replace the active frame with its poster fallback, so cleanup then removed the
+  real preview. The fallback now only becomes active when its own video is the
+  active frame.
+- Previewing now un-hides the wallpaper layer, so previews are visible even if
+  the live wallpaper was hidden (disabled / no wallpaper yet).
+- `test/panel.test.mjs` gained regression cases for all three races.
+
 ## [0.8.1] - 2026-11-10
 
 ### Fixed (quick-switch panel audit)

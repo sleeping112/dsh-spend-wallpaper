@@ -205,10 +205,44 @@ test('quick panel previews, maps rich direction, refreshes packs and posts chang
   findButton('越花越好').click()
   await flush()
   assert.deepEqual(previewLabels(), ['空碗', '白饭梅干', '咖喱饭', '拉面自由', '满汉全席'])
+  layer.dataset.dswpHidden = '1'
   findButton('空碗').click()
   await flush()
+  assert.equal(layer.dataset.dswpHidden, undefined, 'previewing unhides a previously hidden layer')
   assert.ok(frameSources().some((src) => src.endsWith('/a/empty.webm')), 'preview shows the mapped tier asset')
-  const previewTimer = timers.find((timer) => timer?.ms === 15_000)
+
+  // Regression: an older transition cleanup must not remove the new preview
+  // frame (this made the wallpaper briefly disappear when switching quickly).
+  const fireFadeTimers = () => {
+    for (const timer of timers.filter((timer) => timer && timer.ms === 650)) timer.fn()
+  }
+  fireFadeTimers()
+  await flush()
+  assert.ok(frameSources().some((src) => src.endsWith('/a/empty.webm')), 'older cleanup timers must not remove the preview frame')
+
+  // Regression: an error on a *stale* preview video must not hijack the
+  // cleanup frame from a newer preview.
+  findButton('拉面自由').click()
+  await flush()
+  const staleVideo = layer.querySelectorAll('video').find((video) => video.src.endsWith('/a/empty.webm'))
+  assert.ok(staleVideo, 'old preview video is still attached during the fade')
+  staleVideo.dispatch('error')
+  await flush()
+  fireFadeTimers()
+  await flush()
+  assert.ok(layer.querySelectorAll('video').some((video) => video.src.endsWith('/a/ramen.webm')), 'newest preview survives a stale video error')
+  assert.ok(!layer.querySelectorAll('img').some((image) => image.src.endsWith('/a/4.webp')), 'stale error fallback is cleaned up')
+
+  // Regression: if the *active* preview video errors, its poster fallback must
+  // survive the cleanup timer instead of leaving an empty layer.
+  const activeVideo = layer.querySelectorAll('video').find((video) => video.src.endsWith('/a/ramen.webm'))
+  activeVideo.dispatch('error')
+  await flush()
+  fireFadeTimers()
+  await flush()
+  assert.ok(layer.querySelectorAll('img').some((image) => image.src.endsWith('/a/1.webp')), 'active video error fallback survives cleanup')
+
+  const previewTimer = timers.filter((timer) => timer && timer.ms === 15_000).at(-1)
   assert.ok(previewTimer, 'preview must schedule an expiry timer')
   previewTimer.fn()
   await flush()

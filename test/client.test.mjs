@@ -112,6 +112,7 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
     setInterval: () => 1,
     clearInterval: () => {},
     setTimeout: (fn) => { fn(); return 1 },
+    clearTimeout: () => {},
     addEventListener() {},
     removeEventListener() {},
   }
