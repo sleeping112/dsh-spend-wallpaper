@@ -228,6 +228,17 @@ test('sanitizeOverrides rejects invalid values', () => {
   assert.equal(sanitizeOverrides({ surprise: true }).ok, false)
 })
 
+test('sanitizeOverrides accepts custom scene names', () => {
+  const result = sanitizeOverrides({ sceneNames: ['早饭', '', '晚饭'] })
+  assert.equal(result.ok, true, result.errors.join('; '))
+  assert.deepEqual(result.overrides.sceneNames, ['早饭', '', '晚饭'])
+})
+
+test('sanitizeOverrides rejects bad scene names', () => {
+  assert.equal(sanitizeOverrides({ sceneNames: 'x' }).ok, false)
+  assert.equal(sanitizeOverrides({ sceneNames: ['a'.repeat(41)] }).ok, false)
+})
+
 test('sanitizeOverrides reset clears overrides and ignores unknown data', () => {
   const result = sanitizeOverrides({ reset: true })
   assert.equal(result.ok, true)

@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-10
+
+### Added
+
+- Each scene now has an **editable name** in the quick panel (placeholder shows
+  the built-in name; empty falls back to it). Names are persisted via
+  `POST /config { sceneNames: [...] }` and used in the current-tier label,
+  preview chips and terminal status card.
+- Built-in/custom scene names appear in panel scene rows and are capped at 40
+  characters; `sceneNames` is validated in `lib/control.js`.
+
 ## [0.10.0] - 2026-11-10
 
 ### Changed

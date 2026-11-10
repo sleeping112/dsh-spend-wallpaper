@@ -1,6 +1,6 @@
 {
   "name": "dsh-spend-wallpaper",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "DeepSeek Harness 插件：按最近 1 小时余额消耗切换静态/动态壁纸。Wallpaper that follows the DeepSeek balance spent in the last hour.",
   "type": "module",
   "main": "lib/index.js",

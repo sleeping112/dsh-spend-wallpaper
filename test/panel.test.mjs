@@ -133,6 +133,12 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   assert.equal(panel.allNodes().filter((n) => n.className === 'dswp-threshold').length, 5, 'one threshold input per tier')
   assert.equal(panel.allNodes().filter((n) => n.className === 'dswp-scene-row').length, 5, 'one scene row per tier')
   assert.equal(panel.allNodes().filter((n) => n.textContent === '上传').length, 5)
+  const nameInputs = panel.allNodes().filter((n) => n.className === 'dswp-scene-name')
+  assert.equal(nameInputs.length, 5, 'each scene has an editable name')
+  nameInputs[0].value = '我的场景'
+  nameInputs[0].dispatch('change')
+  await flush()
+  assert.ok(posts.some((post) => Array.isArray(post.sceneNames) && post.sceneNames[0] === '我的场景'), 'scene name edit is posted')
 
   const inputs = panel.allNodes().filter((n) => n.className === 'dswp-threshold')
   inputs[1].value = '0.08'
