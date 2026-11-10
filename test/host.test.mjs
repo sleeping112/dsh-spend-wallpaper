@@ -12,7 +12,6 @@ import { fileURLToPath } from 'node:url'
 import { parseAmount, formatAmount, cmpAmount, mulRatio } from '../lib/money.js'
 import { resolveTier, mapPackIndex, parseTierTable, nextThreshold } from '../lib/tiers.js'
 import { appendSample, trimSamples, windowSpend } from '../lib/window.js'
-import { loadPacks, resolveAsset, resolvePack, validateManifest } from '../lib/packs.js'
 import { normalizeApiBase, readCostMeterSpend } from '../lib/sources.js'
 import { sanitizeOverrides, sanitizeStoredOverrides } from '../lib/control.js'
 
@@ -199,50 +198,21 @@ test('cost-meter source reports absence instead of fabricating a value', async (
   assert.equal(empty.reason, 'cost-meter-no-today')
 })
 
-// ------------------------------------------------------------------ packs
-
-test('built-in pack validates and resolves assets', () => {
-  const builtin = path.join(root, 'lib', 'assets', 'packs')
-  const { packs, diagnostics } = loadPacks({ builtinDir: builtin, userDir: path.join(root, 'does-not-exist') })
-  assert.equal(diagnostics.length, 0, JSON.stringify(diagnostics))
-  assert.equal(packs.has('default'), true)
-  const pack = resolvePack(packs, 'missing-pack')
-  assert.equal(pack.id, 'default')
-  assert.equal(pack.manifest.tiers.length, 5)
-  const asset = resolveAsset(pack, '0-calm.webp')
-  assert.ok(asset, 'static asset must exist')
-  assert.equal(asset.contentType, 'image/webp')
-  assert.equal(resolveAsset(pack, '../secret.webp'), null)
-  assert.equal(resolveAsset(pack, 'evil.exe'), null)
-})
-
-test('manifest validation rejects incomplete packs', () => {
-  assert.throws(() => validateManifest({ schema: 1, id: 'x', tiers: [] }, 'x'), /tiers/)
-  assert.throws(
-    () => validateManifest({ schema: 1, id: 'y', tiers: [{ id: 'a', static: 'a.webp', dynamic: { type: 'gif' } }] }, 'y'),
-    /dynamic\.type/,
-  )
-})
-
-test('normalizeApiBase only accepts the official origin', () => {
-  assert.equal(normalizeApiBase('https://api.deepseek.com'), 'https://api.deepseek.com')
-  assert.equal(normalizeApiBase('https://api.deepseek.com/v1'), 'https://api.deepseek.com')
-  assert.equal(normalizeApiBase('http://api.deepseek.com'), null)
-  assert.equal(normalizeApiBase('https://evil.example.com'), null)
-  assert.equal(normalizeApiBase('not a url'), null)
-})
-
 // ------------------------------------------------------------------ control
 
 test('sanitizeOverrides accepts presentation fields', () => {
   const result = sanitizeOverrides({
-    pack: 'deepseek-eats', media: 'auto', direction: 'poor',
-    scrim: 0.1, dim: 0.03, blur: 4, surfaceOpacity: 0.5, lockedTier: '2', enabled: true,
+    media: 'auto', scrim: 0.1, dim: 0.03, blur: 4, surfaceOpacity: 0.5,
+    lockedTier: '2', enabled: true,
   })
   assert.equal(result.ok, true, result.errors.join('; '))
-  assert.equal(result.overrides.pack, 'deepseek-eats')
   assert.equal(result.overrides.scrim, 0.1)
   assert.equal(result.overrides.lockedTier, '2')
+})
+
+test('removed pack format and direction are rejected', () => {
+  assert.equal(sanitizeOverrides({ pack: 'deepseek-eats' }).ok, false)
+  assert.equal(sanitizeOverrides({ direction: 'rich' }).ok, false)
 })
 
 test('removed frame mode and frame-only knobs are rejected', () => {
@@ -254,7 +224,6 @@ test('removed frame mode and frame-only knobs are rejected', () => {
 
 test('sanitizeOverrides rejects invalid values', () => {
   assert.equal(sanitizeOverrides({ scrim: 2 }).ok, false)
-  assert.equal(sanitizeOverrides({ pack: '../evil' }).ok, false)
   assert.equal(sanitizeOverrides({ lockedTier: '99' }).ok, false)
   assert.equal(sanitizeOverrides({ surprise: true }).ok, false)
 })

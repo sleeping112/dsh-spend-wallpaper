@@ -61,7 +61,7 @@ const STATE = {
     direction: 'poor',
     mode: 'full',
     media: 'auto',
-    pack: 'default',
+    sceneLabels: ['满汉全席', '拉面自由', '咖喱饭', '白饭梅干', '空碗'],
     windowMinutes: 60,
     thresholds: ['0', '0.05', '0.30', '1.50', '6.00'],
   },
@@ -124,7 +124,7 @@ test('CLI status --json reads the persisted snapshot', () => withHome(async (hom
   assert.equal(payload.ok, true)
   assert.equal(payload.spend, '0.4')
   assert.equal(payload.tierIndex, 2)
-  assert.equal(payload.tierLabel, '起浪')
+  assert.equal(payload.tierLabel, '咖喱饭')
   assert.equal(payload.nextAt, '1.5')
   assert.equal(payload.samples, 1)
 }))
@@ -135,7 +135,7 @@ test('CLI status text prints the status card', () => withHome(async (home) => {
   const code = await run(['status'], io)
   assert.equal(code, 0)
   assert.match(io.out(), /当前档位/)
-  assert.match(io.out(), /起浪/)
+  assert.match(io.out(), /咖喱饭/)
 }))
 
 test('CLI status reports missing state', () => withHome(async (home) => {

@@ -25,7 +25,7 @@
 
 如果窗口背景没有立刻变化：先按 `Ctrl+R` 刷新页面；仍然没有就完全退出并重启 DSH（部分 profile 没开 HMR 时需要重启）。
 
-> 装好后不用改任何配置，**默认就会显示「DeepSeek 干饭」第 0 档「满汉全席」壁纸**（壁纸铺满整个窗口，界面面板半透明）。想换回深海风：配置 `pack: default`。
+> 装好后不用改任何配置，**默认就会显示「DeepSeek 干饭」第 0 档「满汉全席」壁纸**（壁纸铺满整个窗口，界面面板半透明）。
 
 ---
 
@@ -39,7 +39,7 @@
 
 ---
 
-## 3. 1 分钟把五个档位都看一遍（不花真钱）
+## 3. 1 分钟把各档位都看一遍（不花真钱）
 
 打开 `C:\Users\32602\.dsh\profiles\desktop\cordis.patch.yml`，在文件末尾追加：
 
@@ -71,8 +71,8 @@
 
 ## 4. 日常使用
 
-- **快捷切换壁纸**：点右下角 🐋 图标打开面板，可以一键换素材包、静态/动态、预览任意档位、锁定当前档、刷新数据、恢复默认；还有外观滑杆（面板不透明度/暗化/压暗/模糊）、切换动画、采样间隔、统计窗口、防抖强度和阈值预设。改动立即生效并记住，不用改 YAML。
-- **自动切换**：默认就是自动。阈值是 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，每 3 分钟采样一次，档位变化有「迟滞 + 最短驻留 10 分钟」防抖。
+- **快捷切换壁纸**：点右下角 🐋 图标打开面板：每档可上传自己的图片或视频（「上传」「清除」），档位数量可 2–8 增减，5 个阈值可按需修改；还能预览任意档、锁定当前档、刷新数据、恢复默认，以及调外观滑杆、切换动画、采样间隔、统计窗口和防抖。改动立即生效并记住，不用改 YAML。
+- **自动切换**：默认就是自动。默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`（可在面板改），每 3 分钟采样一次，档位变化有「迟滞 + 最短驻留 10 分钟」防抖。
 - **切静态/动态**：`media: auto`（默认，有视频用视频、开了减少动效用静态）/ `static` / `dynamic`。
 - **铺满显示**：壁纸始终铺满窗口，界面半透明；觉得字不够清楚就调 `surfaceOpacity` / `scrim`。
 - **方向**：`direction: poor`（默认，花得越多越惨）或 `rich`（花得越多越豪华）。
@@ -113,18 +113,12 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 
 ## 6. 换成自己的壁纸（可选）
 
-1. 建目录 `C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack\`；
-2. 放 5 张图（每档一张）和 `manifest.json`，格式照抄
-   `E:\workspace\dsh-spend-wallpaper\lib\assets\packs\default\manifest.json`（或 `deepseek-eats`）；
-3. 校验：
+- 点右下角 🐋 打开面板 → 「每档场景」→ 对应档位点「上传」，选一张图片或一段视频即可；「清除」回到内置场景。
+- 档位数量用「− / +」调（2–8），每个阈值输入框可直接改数值（第一档固定从 0 开始）。
+- 上传文件保存在 `$DSH_HOME/storages/spend-wallpaper/scenes/`，删除对应 `custom-<档>.{png,jpg,webp,webm,mp4}` 也能回到内置。
+- 也支持脚本：`POST /plugins/dsh-spend-wallpaper/scenes/<档位>`（raw body + Content-Type）。
 
-   ```sh
-   node E:\workspace\dsh-spend-wallpaper\scripts\pack-check.mjs "C:\Users\32602\.dsh\spend-wallpaper\packs\my-pack"
-   ```
-
-4. 配置里加 `pack: my-pack`，保存后最多 1 分钟生效。
-
-详细规则见 [packs.md](packs.md)。
+详细说明见 [scenes.md](scenes.md)。
 
 ---
 
@@ -148,7 +142,7 @@ node bin\dsh-spend-wallpaper.mjs render --tier 4 --once   # 指定档位预览�
 
 ```sh
 curl http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/state
-curl http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/packs
+curl http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/state
 curl -X POST http://127.0.0.1:65239/plugins/dsh-spend-wallpaper/refresh
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-spend-wallpaper",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "DeepSeek Harness 插件：按最近 1 小时余额消耗切换静态/动态壁纸。Wallpaper that follows the DeepSeek balance spent in the last hour.",
   "type": "module",
   "main": "lib/index.js",
@@ -85,8 +85,6 @@
     "test": "node --test",
     "test:watch": "node --test --watch",
     "build": "node scripts/build-client.mjs",
-    "check:pack": "node scripts/pack-check.mjs",
-    "gen:assets": "python scripts/gen-assets.py",
     "terminal": "node bin/dsh-spend-wallpaper.mjs",
     "demo": "node bin/dsh-spend-wallpaper.mjs render --tier 2 --once",
     "prepublishOnly": "npm test && node scripts/build-client.mjs && node scripts/pack-check.mjs"

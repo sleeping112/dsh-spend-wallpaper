@@ -6,6 +6,27 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-10
+
+### Changed
+
+- Removed the **wallpaper pack / manifest format** entirely. Built-in scenes are
+  flat files in `lib/assets/scenes/` and are copied to the writable state dir at
+  startup.
+- Each tier/threshold now has its **own scene**, which can be replaced by
+  uploading a static image or dynamic video from the quick panel. "Clear"
+  restores the built-in scene.
+- **Tier count is adjustable** (2–8) and every threshold is editable directly in
+  the panel (or via `POST /config { thresholds }`); the 5‑tier default remains.
+- New HTTP routes:
+  `GET /scenes/<tier>?kind=image|video`,
+  `POST /scenes/<tier>` (raw upload + Content-Type),
+  `POST /scenes/<tier>/reset`.
+- `POST /config` no longer accepts `pack`/`direction`; removed the old
+  `/packs` and `/assets/<pack>/<file>` routes.
+- Docs updated (`docs/scenes.md`, README/quickstart); deleted `lib/packs.js`,
+  `scripts/pack-check.mjs` and the old sea-scene generator.
+
 ## [0.9.0] - 2026-11-10
 
 ### Removed
