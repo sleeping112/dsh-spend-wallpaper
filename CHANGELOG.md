@@ -6,6 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-10
+
+### Added
+
+- More adjustable parameters in the quick-switch panel:
+  - appearance sliders: panel opacity, wallpaper scrim, extra dim, blur;
+  - frame margin/radius sliders;
+  - transition duration, sampling interval, statistic window, debounce preset
+    and threshold preset chips.
+- `/config` now also accepts `inset`, `radius`, `transitionMs`, `hysteresis`,
+  `windowMinutes`, `sampleSeconds`, `minDwellSeconds` and `thresholds`
+  (validated in `lib/control.js`; thresholds must be ascending and start at 0).
+- Changing the sampling cadence restarts the sample timer immediately; window
+  and threshold changes recompute the tier immediately.
+
 ## [0.7.0] - 2026-11-10
 
 ### Added

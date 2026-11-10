@@ -260,6 +260,24 @@ test('sanitizeOverrides reset clears overrides and ignores unknown data', () => 
   assert.deepEqual(result.overrides, {})
 })
 
+test('sanitizeOverrides accepts sampling and appearance knobs', () => {
+  const result = sanitizeOverrides({
+    inset: 16, radius: 24, transitionMs: 600, windowMinutes: 30, sampleSeconds: 120,
+    hysteresis: 0.4, minDwellSeconds: 1800, thresholds: ['0', '0.02', '0.1', '0.5', '2'],
+  })
+  assert.equal(result.ok, true, result.errors.join('; '))
+  assert.equal(result.overrides.inset, 16)
+  assert.equal(result.overrides.windowMinutes, 30)
+  assert.deepEqual(result.overrides.thresholds, ['0', '0.02', '0.1', '0.5', '2'])
+})
+
+test('sanitizeOverrides rejects malformed thresholds and out-of-range knobs', () => {
+  assert.equal(sanitizeOverrides({ thresholds: ['0', '0.1', '0.05'] }).ok, false)
+  assert.equal(sanitizeOverrides({ thresholds: ['0.1', '0.2'] }).ok, false)
+  assert.equal(sanitizeOverrides({ windowMinutes: 0 }).ok, false)
+  assert.equal(sanitizeOverrides({ sampleSeconds: 30.5 }).ok, false)
+})
+
 test('sanitizeStoredOverrides keeps only valid persisted values', () => {
   assert.deepEqual(sanitizeStoredOverrides({ mode: 'frame', scrim: 0.3 }), { mode: 'frame', scrim: 0.3 })
   assert.deepEqual(sanitizeStoredOverrides({ mode: 'bad' }), {})

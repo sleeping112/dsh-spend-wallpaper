@@ -324,10 +324,11 @@ html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp
 右下角固定一个 🐋 按钮，点开是自绘面板（纯 DOM，不依赖 React/slot）：
 
 - 素材包、`full/frame`、`auto/static/dynamic`、`poor/rich`、五档预览、锁定档位、刷新数据、恢复默认、开关壁纸；
+- 外观滑杆（`surfaceOpacity`/`scrim`/`dim`/`blur`）、相框边距/圆角（`inset`/`radius`）、切换动画（`transitionMs`）、采样间隔（`sampleSeconds`）、统计窗口（`windowMinutes`）、防抖预设（`hysteresis` + `minDwellSeconds`）、阈值预设（`thresholds`）；
 - 预览是**纯客户端**的：按 `/packs` 返回的素材 URL 临时显示 15 秒，不写 Host 状态，也不影响自动切换；
 - 面板改动通过 `POST /plugins/dsh-spend-wallpaper/config` 写回 Host。
 
-Host 侧新增 `control.js` 做白名单校验（pack/mode/media/direction/enabled/lockedTier/scrim/dim/blur/surfaceOpacity），`applyOverrides()` 把接受的值合并到 `readConfig()` 之上（profile 配置 < 快捷覆盖），并持久化到 `state.json` 的 `overrides`；`{reset:true}` 清除覆盖、回落到 profile 配置。这样换壁纸不再需要编辑 YAML 或重启插件。HTTP 路由仍走同源栅栏。
+Host 侧新增 `control.js` 做白名单校验（pack/mode/media/direction/enabled/lockedTier/scrim/dim/blur/surfaceOpacity/inset/radius/transitionMs/hysteresis/windowMinutes/sampleSeconds/minDwellSeconds/thresholds），`applyOverrides()` 把接受的值合并到 `readConfig()` 之上（profile 配置 < 快捷覆盖），并持久化到 `state.json` 的 `overrides`；`{reset:true}` 清除覆盖、回落到 profile 配置。采样间隔变化会立即重启采样定时器，阈值/窗口/防抖变化会立即重算档位。这样换壁纸和调参都不再需要编辑 YAML 或重启插件。HTTP 路由仍走同源栅栏。
 
 ---
 
