@@ -31,7 +31,7 @@
 │  StatePoller(20s) ──► WallpaperLayer (#dswp-root, fixed, z-index:-1)             │
 │                          ├─ <img> 静态 / <video> 动态（交叉淡入）                  │
 │                          └─ scrim 渐变 + dim                                      │
-│  data-dswp-mode: full（默认，铺满）/ frame（相框）                                │
+│  data-dswp-mode: full（唯一，铺满；0.9 起移除 frame）                                  │
 └───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -168,8 +168,7 @@ Host 服务 `ctx.provide('wallpaper', runtime)`（可选，方便其它插件消
   windowMinutes: number,
   tier: { index, id, label, min, nextAt, nextLabel, pending },
   wallpaper: { kind: 'image'|'video', src, poster, packId, tierIndex, tierId, transitionMs } | null,
-  rendering: { mode, media, scrim, dim, blur, surfaceOpacity, inset, radius,
-               transitionMs, direction },
+  rendering: { media, scrim, dim, blur, surfaceOpacity, transitionMs, direction },
   pack: { id, name, tiers: [{ id, label, min }] } | null,
   updatedAt, nextSampleAt,
   diagnostics: { samples, windowReason, lastError, lastAttemptAt, lastSuccessAt,
@@ -301,9 +300,7 @@ html[data-dswp-mode="full"] body {
   --dsw-specific-sidebar-fill: var(--dswp-sidebar) !important;
 }
 
-/* frame：相框，不动颜色 token，只在四周露出壁纸 */
-html[data-dswp-mode="frame"] body { background: transparent !important; box-sizing: border-box; padding: var(--dswp-inset); }
-html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp-radius); overflow: hidden; }
+/* 0.9 起移除 frame 相框模式：壁纸始终 full-bleed */
 ```
 
 `full` 模式下 `--dswp-surface` / `--dswp-sidebar` 由 client 用 `rgba(深/浅色, surfaceOpacity)` 计算并写到 `<html>`；浅/深判断读 `body[data-ds-dark-theme]`，主题切换由 `MutationObserver` 重新计算。scrim 用同样方式按 `scrim + dim` 计算；`blur` 作用在壁纸层媒体上（`full` 下更好读）。
@@ -317,18 +314,18 @@ html[data-dswp-mode="frame"] #root > div:first-child { border-radius: var(--dswp
 
 ### 6.4 兼容性探测与降级
 
-启动时检查：`#root` 存在；能读到 `--dsw-alias-bg-base`；探测失败自动用 `frame`（只做 body padding + 圆角），设置页提示。宿主升级最坏情况是"看不到壁纸"，不会破坏界面。
+启动时检查：`#root` 存在；能读到 `--dsw-alias-bg-base`；探测失败则不改主题 token（壁纸可能不可见），不会破坏界面。宿主升级最坏情况是"看不到壁纸"。
 
 ### 6.5 快捷切换（0.7）
 
 右下角固定一个 🐋 按钮，点开是自绘面板（纯 DOM，不依赖 React/slot）：
 
-- 素材包、`full/frame`、`auto/static/dynamic`、`poor/rich`、五档预览、锁定档位、刷新数据、恢复默认、开关壁纸；
-- 外观滑杆（`surfaceOpacity`/`scrim`/`dim`/`blur`）、相框边距/圆角（`inset`/`radius`）、切换动画（`transitionMs`）、采样间隔（`sampleSeconds`）、统计窗口（`windowMinutes`）、防抖预设（`hysteresis` + `minDwellSeconds`）、阈值预设（`thresholds`）；
+- 素材包、`auto/static/dynamic`、`poor/rich`、五档预览、锁定档位、刷新数据、恢复默认、开关壁纸；
+- 外观滑杆（`surfaceOpacity`/`scrim`/`dim`/`blur`）、切换动画（`transitionMs`）、采样间隔（`sampleSeconds`）、统计窗口（`windowMinutes`）、防抖预设（`hysteresis` + `minDwellSeconds`）、阈值预设（`thresholds`）；
 - 预览是**纯客户端**的：按 `/packs` 返回的素材 URL 临时显示 15 秒，不写 Host 状态，也不影响自动切换；
 - 面板改动通过 `POST /plugins/dsh-spend-wallpaper/config` 写回 Host。
 
-Host 侧新增 `control.js` 做白名单校验（pack/mode/media/direction/enabled/lockedTier/scrim/dim/blur/surfaceOpacity/inset/radius/transitionMs/hysteresis/windowMinutes/sampleSeconds/minDwellSeconds/thresholds），`applyOverrides()` 把接受的值合并到 `readConfig()` 之上（profile 配置 < 快捷覆盖），并持久化到 `state.json` 的 `overrides`；`{reset:true}` 清除覆盖、回落到 profile 配置。采样间隔变化会立即重启采样定时器，阈值/窗口/防抖变化会立即重算档位。这样换壁纸和调参都不再需要编辑 YAML 或重启插件。HTTP 路由仍走同源栅栏。
+Host 侧新增 `control.js` 做白名单校验（pack/media/direction/enabled/lockedTier/scrim/dim/blur/surfaceOpacity/transitionMs/hysteresis/windowMinutes/sampleSeconds/minDwellSeconds/thresholds），`applyOverrides()` 把接受的值合并到 `readConfig()` 之上（profile 配置 < 快捷覆盖），并持久化到 `state.json` 的 `overrides`；`{reset:true}` 清除覆盖、回落到 profile 配置。采样间隔变化会立即重启采样定时器，阈值/窗口/防抖变化会立即重算档位。这样换壁纸和调参都不再需要编辑 YAML 或重启插件。HTTP 路由仍走同源栅栏。
 
 ---
 
@@ -496,10 +493,8 @@ bin/dsh-spend-wallpaper.mjs
 | 档位 | `hysteresis` | 0.25 | 迟滞比例 |
 | 档位 | `minDwellSeconds` | 600 | 最短驻留 |
 | 素材 | `pack`, `media` | deepseek-eats, auto | 素材包（deepseek-eats / default / 自定义）/ static / dynamic / auto |
-| 渲染 | `mode` | full | full（铺满）/ frame（相框） |
 | 渲染 | `scrim`, `dim`, `blur` | .10 / .03 / 0 | 可读性与氛围 |
-| 渲染 | `surfaceOpacity` | .50 | full 模式面板不透明度 |
-| 渲染 | `inset`, `radius` | 16 / 16 | frame 模式相框 |
+| 渲染 | `surfaceOpacity` | .50 | 面板不透明度（壁纸始终铺满） |
 | 其它 | `lockedTier`, `manualSpend` | "" / "0" | 锁定档位 / manual 源 |
 
 设置页：M0 用 DSH 自动生成的 Config 表单（只展示 volatile 字段）；M1 再注册 `settings.section` + `plugins.bundle.config` 自绘页面（状态卡、迷你趋势、素材缩略图、预览/锁定）。
@@ -526,8 +521,8 @@ bin/dsh-spend-wallpaper.mjs
 | 内置素材存在性/尺寸/魔数检查 | ✅ `npm test`（`test/assets.test.mjs`） |
 | 组合树装载 + Config schema 投影 | ✅ `dsh --profile <p> --dump-config(-schema)` |
 | 真实宿主跑通 `/state`、`/packs`、`/assets`、`/refresh` | ✅ 临时 profile 实例 |
-| 浏览器端视觉/交互（frame/full、视频、reduced-motion、卸载清理） | ⏳ M1 |
-| 视觉回归：5 档 × 浅/深主题 × frame/full | ⏳ M1 |
+| 浏览器端视觉/交互（铺满显示、视频、reduced-motion、卸载清理） | ⏳ M1 |
+| 视觉回归：5 档 × 浅/深主题 | ⏳ M1 |
 | 兼容矩阵：0.2.2-rc.1 / 下一 minor；Web + Desktop | ⏳ M1 |
 
 ---
@@ -548,7 +543,7 @@ bin/dsh-spend-wallpaper.mjs
 
 | 风险 | 影响 | 缓解 |
 |---|---|---|
-| DOM/token 与宿主版本耦合 | 升级后壁纸不可见/样式错乱 | 探测 + 自动降级 `frame`；版本范围声明；视觉回归 |
+| DOM/token 与宿主版本耦合 | 升级后壁纸不可见/样式错乱 | 探测 + 失败时不改主题 token；版本范围声明；视觉回归 |
 | 余额语义（充值/赠送回收/多设备） | 误判档位 | 负差额归零、`stale` 冻结、文案标注"约" |
 | 接口限流/未登录 | 无数据 | 指数退避、源回退、`warming`/`unavailable` 状态 |
 | 动态视频耗电 | 体验差 | 隐藏暂停、reduced-motion、文件上限、`auto` 且默认静态优先 |

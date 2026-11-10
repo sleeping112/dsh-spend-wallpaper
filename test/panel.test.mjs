@@ -199,6 +199,8 @@ test('quick panel previews, maps rich direction, refreshes packs and posts chang
   button.click()
   await flush()
   assert.equal(panel.hasAttribute('hidden'), false, 'button opens the panel')
+  assert.equal(findButton('铺满'), undefined, 'full/frame mode toggle was removed')
+  assert.equal(findButton('相框'), undefined, 'frame mode toggle was removed')
   assert.deepEqual(previewLabels(), ['满汉全席', '拉面自由', '咖喱饭', '白饭梅干', '空碗'])
 
   // Rich direction must reverse the preview labels (tier 0 is the worst meal).

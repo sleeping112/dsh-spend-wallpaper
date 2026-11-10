@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-10
+
+### Removed
+
+- The **frame/相框 display mode** is gone: the wallpaper is now always
+  full-bleed. The quick panel no longer shows the 铺满/相框 toggle, and the
+  相框边距/圆角 sliders were removed with it.
+- `POST /config` no longer accepts `mode`, `inset` or `radius`; persisted
+  overrides from older versions drop those keys while keeping the valid ones.
+  An old `mode: frame` in a profile config is ignored (rendering is forced to
+  `full`).
+- `rendering` snapshots no longer expose `inset`/`radius`, and the frame-mode
+  CSS/body-padding rules were removed.
+
+### Changed
+
+- Docs (README/quickstart/design/terminal) updated to describe full-bleed only.
+
 ## [0.8.2] - 2026-11-10
 
 ### Fixed (preview sometimes went blank)

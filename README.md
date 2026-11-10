@@ -16,9 +16,9 @@
 - **三路数据源**：`dsh-cost-meter` 本地用量估算（默认优先，适配订阅/零钱包账号）→ 桌面登录账号钱包（`ctx.deepseekAccount`）→ 开放平台 `/user/balance`（API Key）；`manual` 用于联调。
 - **静态 / 动态可选**：`auto` / `static` / `dynamic`；尊重 `prefers-reduced-motion`，窗口不可见时暂停视频。
 - **五档 + 迟滞 + 最短驻留**：默认阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，不会在边界抖动。
-- **两种显示模式**：`full`（默认，壁纸铺满整个窗口、界面半透明）与 `frame`（相框，仅在四周露出壁纸，最保守）。
+- **铺满显示**：壁纸始终铺满整个窗口、界面半透明；旧的 `frame` 相框模式已在 0.9 移除。
 - **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
-- **快捷切换**：右下角 🐋 按钮打开面板，直接切素材包 / 铺满-相框 / 动态-静态 / 方向 / 预览档位 / 锁定 / 刷新 / 恢复默认，还能拖滑杆调**面板不透明度、壁纸暗化、额外压暗、模糊、相框边距/圆角**，以及**切换动画、采样间隔、统计窗口、防抖、阈值预设**；改动即时生效并持久化在插件状态里，不用改 YAML 或重启。
+- **快捷切换**：右下角 🐋 按钮打开面板，直接切素材包 / 动态-静态 / 方向 / 预览档位 / 锁定 / 刷新 / 恢复默认，还能拖滑杆调**面板不透明度、壁纸暗化、额外压暗、模糊**，以及**切换动画、采样间隔、统计窗口、防抖、阈值预设**；改动即时生效并持久化在插件状态里，不用改 YAML 或重启。
 - **五档动画场景**：默认「DeepSeek 干饭」——花得越少吃越香：满汉全席 → 拉面 → 咖喱饭 → 白饭梅干 → 空碗流泪；另有「深海情绪」极光/鲸群/紫潮/风暴/海啸。每档一棵静态 WebP + 一段循环 WebM。
 - **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
 - **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
@@ -49,7 +49,6 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
   config:
     source: manual          # 先用 manual 联调
     manualSpend: "0.40"     # 假装最近 1 小时花了 ¥0.40
-    mode: full              # full（默认，铺满）/ frame（相框）
     media: auto             # auto / static / dynamic
     thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
 ```
@@ -64,12 +63,10 @@ dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patc
 | `windowMinutes` | `60` | 滚动窗口（5–180） |
 | `sampleSeconds` | `180` | 采样间隔（60–600） |
 | `direction` | `poor` | `poor` / `rich` |
-| `mode` | `full` | `full`（铺满）/ `frame`（相框） |
 | `media` | `auto` | `auto` / `static` / `dynamic` |
 | `pack` | `deepseek-eats` | 素材包 id：`deepseek-eats`（默认，Q 版干饭）/ `default`（深海情绪） |
 | `scrim` / `dim` / `blur` | `.10` / `.03` / `0` | 可读性、氛围与壁纸模糊 |
-| `surfaceOpacity` | `.50` | `full` 模式面板不透明度（越低壁纸越明显） |
-| `inset` / `radius` | `16` / `16` | `frame` 模式相框 |
+| `surfaceOpacity` | `.50` | 面板不透明度（越低壁纸越明显） |
 | `transitionMs` | `600` | 交叉淡入时长 |
 | `hysteresis` | `.25` | 越过阈值 25% 才换档 |
 | `minDwellSeconds` | `600` | 最短驻留时间 |
@@ -143,7 +140,7 @@ HTTP 接口（同源、只读为主）：
 | `GET /plugins/dsh-spend-wallpaper/packs` | 已发现素材包 |
 | `GET /plugins/dsh-spend-wallpaper/assets/<pack>/<file>` | 素材（ETag + `max-age=3600`） |
 | `POST /plugins/dsh-spend-wallpaper/refresh` | 立即采样（10 秒限流） |
-| `POST /plugins/dsh-spend-wallpaper/config` | 快捷切换：`{pack, mode, media, direction, scrim, dim, blur, surfaceOpacity, enabled, lockedTier}`；`{reset:true}` 清除覆盖 |
+| `POST /plugins/dsh-spend-wallpaper/config` | 快捷切换：`{pack, media, direction, scrim, dim, blur, surfaceOpacity, enabled, lockedTier}` 等；`{reset:true}` 清除覆盖 |
 
 `source=manual` + `POST /refresh` 可以在不真实烧钱的情况下把所有档位过一遍。
 
@@ -161,11 +158,11 @@ HTTP 接口（同源、只读为主）：
 - 实机运行（2026-11-10，桌面 App）：插件以 `link:E:/workspace/dsh-spend-wallpaper` 装入 desktop profile 后 Host 激活，`source=auto` 选中 `cost-meter`（账号钱包为 0 时仍能工作），`/state` 返回档位与素材 URL；`status` 显示「本地用量估算」。
 - 素材：5 × 2560×1440 WebP（约 220–310 KB）+ 5 × 1280×720 VP9 WebM（6s，约 90–111 KB），全部由 `scripts/gen-assets.py` 程序化生成。
 
-**未验证**：真实浏览器里的视觉效果（frame/full 两种模式、视频自动播放、reduced-motion、Desktop 载体的 file:// fetch 桥）。这些属于 M1 的浏览器回归测试。
+**未验证**：真实浏览器里的视觉效果（铺满显示、视频自动播放、reduced-motion、Desktop 载体的 file:// fetch 桥）。这些属于 M1 的浏览器回归测试。
 
 ## 已知限制
 
-- `frame` 模式依赖 Web 壳的 `<body><div id="root">…` 结构；`full` 模式依赖 `--dsw-alias-bg-base` / `--dsw-specific-sidebar-fill` 两个主题 token。宿主大版本升级后若结构变化，插件会自动退化为 `frame` 的安全子集（设置页会提示）。
+- 铺满显示依赖 Web 壳的 `<body><div id="root">…` 结构，以及 `--dsw-alias-bg-base` / `--dsw-specific-sidebar-fill` 两个主题 token。宿主大版本升级后若结构变化，插件最坏情况是壁纸不可见，不会破坏界面。
 - 余额接口有分钟级计费延迟；窗口值标注为"约"。充值/赠送回收按 0 消耗处理。
 - 同一账号在其它设备上的消耗会计入余额差（这是"账号消耗"而非"本机消耗"）。
 - `cost-meter` 数据源依赖已安装的 `dsh-cost-meter`（读取其 `getState()` 的今日成本计数器并差分），金额是**本地估算**，与官方账单存在分钟级差异；未安装时自动回退到账号余额/API Key。

@@ -59,7 +59,7 @@ const STATE = {
     source: 'manual',
     currency: 'CNY',
     direction: 'poor',
-    mode: 'frame',
+    mode: 'full',
     media: 'auto',
     pack: 'default',
     windowMinutes: 60,

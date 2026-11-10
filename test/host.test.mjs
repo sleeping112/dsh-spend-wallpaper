@@ -236,18 +236,23 @@ test('normalizeApiBase only accepts the official origin', () => {
 
 test('sanitizeOverrides accepts presentation fields', () => {
   const result = sanitizeOverrides({
-    pack: 'deepseek-eats', mode: 'full', media: 'auto', direction: 'poor',
+    pack: 'deepseek-eats', media: 'auto', direction: 'poor',
     scrim: 0.1, dim: 0.03, blur: 4, surfaceOpacity: 0.5, lockedTier: '2', enabled: true,
   })
   assert.equal(result.ok, true, result.errors.join('; '))
   assert.equal(result.overrides.pack, 'deepseek-eats')
-  assert.equal(result.overrides.mode, 'full')
   assert.equal(result.overrides.scrim, 0.1)
   assert.equal(result.overrides.lockedTier, '2')
 })
 
+test('removed frame mode and frame-only knobs are rejected', () => {
+  assert.equal(sanitizeOverrides({ mode: 'full' }).ok, false)
+  assert.equal(sanitizeOverrides({ mode: 'frame' }).ok, false)
+  assert.equal(sanitizeOverrides({ inset: 16 }).ok, false)
+  assert.equal(sanitizeOverrides({ radius: 16 }).ok, false)
+})
+
 test('sanitizeOverrides rejects invalid values', () => {
-  assert.equal(sanitizeOverrides({ mode: 'diagonal' }).ok, false)
   assert.equal(sanitizeOverrides({ scrim: 2 }).ok, false)
   assert.equal(sanitizeOverrides({ pack: '../evil' }).ok, false)
   assert.equal(sanitizeOverrides({ lockedTier: '99' }).ok, false)
@@ -262,11 +267,10 @@ test('sanitizeOverrides reset clears overrides and ignores unknown data', () => 
 
 test('sanitizeOverrides accepts sampling and appearance knobs', () => {
   const result = sanitizeOverrides({
-    inset: 16, radius: 24, transitionMs: 600, windowMinutes: 30, sampleSeconds: 120,
+    transitionMs: 600, windowMinutes: 30, sampleSeconds: 120,
     hysteresis: 0.4, minDwellSeconds: 1800, thresholds: ['0', '0.02', '0.1', '0.5', '2'],
   })
   assert.equal(result.ok, true, result.errors.join('; '))
-  assert.equal(result.overrides.inset, 16)
   assert.equal(result.overrides.windowMinutes, 30)
   assert.deepEqual(result.overrides.thresholds, ['0', '0.02', '0.1', '0.5', '2'])
 })
@@ -279,7 +283,7 @@ test('sanitizeOverrides rejects malformed thresholds and out-of-range knobs', ()
 })
 
 test('sanitizeStoredOverrides keeps only valid persisted values', () => {
-  assert.deepEqual(sanitizeStoredOverrides({ mode: 'frame', scrim: 0.3 }), { mode: 'frame', scrim: 0.3 })
+  assert.deepEqual(sanitizeStoredOverrides({ mode: 'frame', scrim: 0.3 }), { scrim: 0.3 })
   assert.deepEqual(sanitizeStoredOverrides({ mode: 'bad' }), {})
   assert.deepEqual(sanitizeStoredOverrides(null), {})
 })

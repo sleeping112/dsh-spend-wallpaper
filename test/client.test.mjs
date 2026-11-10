@@ -156,7 +156,6 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
 
   assert.equal(documentStub.documentElement.dataset.dswp, 'on', 'wallpaper layer must be enabled')
   assert.equal(documentStub.documentElement.dataset.dswpMode, 'full', 'full mode must be applied')
-  assert.equal(documentStub.documentElement.style.props.get('--dswp-inset'), '16px')
   assert.equal(documentStub.documentElement.style.props.get('--dswp-fade'), '600ms')
   assert.match(documentStub.documentElement.style.props.get('--dswp-surface') ?? '', /^rgba\(/)
   assert.ok(fetchCalls >= 1, 'client must poll /state')
