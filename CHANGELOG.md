@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-11-10
+
+### Fixed (scene feature audit)
+
+- Custom video with `media: static`: the wallpaper used to become an `<img>`
+  pointing at a `.webm` (broken/blank). It now renders a paused video element on
+  its first frame.
+- "清除" now deletes the uploaded `custom-<tier>.*` files instead of only
+  dropping the override (no more orphaned media).
+- Overrides whose file was deleted from disk are pruned when the scene pack is
+  resolved; hidden-tier overrides are preserved for when the tier count grows.
+- The upload file input is kept in the DOM until the picker resolves; removing
+  it immediately could lose the change event in some browsers.
+- Uploads with an empty MIME type infer image/video Content-Type from the file
+  extension instead of being rejected.
+- Editing two threshold/name fields quickly no longer drops the first edit
+  (values are collected from the DOM before posting).
+
 ## [0.11.1] - 2026-11-10
 
 ### Fixed

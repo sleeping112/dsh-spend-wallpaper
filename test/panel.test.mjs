@@ -143,8 +143,14 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   const inputs = panel.allNodes().filter((n) => n.className === 'dswp-threshold')
   inputs[1].value = '0.08'
   inputs[1].dispatch('change')
+  inputs[2].value = '0.4'
+  inputs[2].dispatch('change')
   await flush()
-  assert.ok(posts.some((post) => Array.isArray(post.thresholds) && post.thresholds[1] === '0.08'), 'threshold edit is posted')
+  const thresholdPosts = posts.filter((post) => Array.isArray(post.thresholds))
+  assert.ok(thresholdPosts.length > 0, 'threshold edit is posted')
+  const latestThresholds = thresholdPosts[thresholdPosts.length - 1].thresholds
+  assert.equal(latestThresholds[1], '0.08', 'first of two quick threshold edits survives')
+  assert.equal(latestThresholds[2], '0.4', 'second quick threshold edit is included')
   const sampleInput = panel.allNodes().find((n) => n.className === 'dswp-param')
   assert.ok(sampleInput, 'sampling interval is a fill-in field')
   sampleInput.value = '90'
@@ -162,6 +168,18 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   await flush()
   const frames = layer.querySelectorAll('.dswp-frame').map((frame) => frame.src)
   assert.ok(frames.some((src) => src.endsWith('/s/4.webm')), 'preview uses the selected scene')
+
+  // A custom video has no poster; static mode must fall back to a paused video
+  // element, not an <img> with a .webm src.
+  state.rendering.media = 'static'
+  state.scenes[0].imageUrl = null
+  state.scenes[0].custom = true
+  findButton('刷新数据').click()
+  await flush()
+  findButton('满汉全席').click()
+  await flush()
+  const staticVideo = layer.querySelectorAll('video').find((video) => video.src.endsWith('/s/0.webm'))
+  assert.ok(staticVideo, 'static preview of a posterless video still uses a video element')
 
   findButton('+').click()
   await flush()
