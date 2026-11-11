@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-12
+
+### Added
+
+- Desktop window controls on Windows now participate in the transparent
+  wallpaper: the hidden probe that the electron preload uses to color the
+  native caption overlay is made transparent, the preload is nudged to
+  re-measure it, and the in-app titlebar strip (`_frame` background and
+  `:before`) is made transparent. The min/max/close buttons and the titlebar
+  area now sit on the wallpaper instead of an opaque band.
+
 ## [0.12.4] - 2026-11-12
 
 ### Fixed
