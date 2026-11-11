@@ -126,10 +126,13 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   const button = elements.find((el) => el.attributes.id === 'dswp-quick')
   const panel = elements.find((el) => el.attributes.id === 'dswp-panel')
   const findButton = (text) => panel.allNodes().find((n) => n.tagName === 'BUTTON' && n.textContent === text)
+  state.scenes[2].custom = true
   button.click()
   await flush()
 
-  assert.equal(findButton('铺满'), undefined)
+  assert.ok(panel.allNodes().some((n) => n.textContent === '当前场景画面（已上传，可直接调）'), 'active uploaded scene shows its display editor without clicking')
+  assert.ok(panel.allNodes().some((n) => n.className === 'dswp-scene-display'), 'active scene display controls are rendered')
+
   assert.equal(findButton('相框'), undefined)
   assert.equal(panel.allNodes().filter((n) => n.className === 'dswp-threshold').length, 5, 'one threshold input per tier')
   assert.equal(panel.allNodes().filter((n) => n.className === 'dswp-scene-row').length, 5, 'one scene row per tier')
@@ -148,7 +151,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   assert.ok(findButton('完整'), 'display editor opens even with an input focused')
   findButton('完整').click()
   await flush()
-  assert.ok(posts.some((post) => Array.isArray(post.sceneSettings) && post.sceneSettings[0]?.fit === 'contain'), 'fit mode is posted')
+  assert.ok(posts.some((post) => Array.isArray(post.sceneSettings) && post.sceneSettings.some((item) => item.fit === 'contain')), 'fit mode is posted')
 
   const inputs = panel.allNodes().filter((n) => n.className === 'dswp-threshold')
   inputs[1].value = '0.08'

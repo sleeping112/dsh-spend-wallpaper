@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.3] - 2026-11-12
+
+### Changed
+
+- When the currently active tier is an uploaded custom scene, its fit / focal
+  point / zoom controls are now rendered **directly at the top of the panel**
+  ("当前场景画面（已上传，可直接调）"), without clicking 「调整画面」 first.
+  The panel title includes `v0.12.3` so a stale client bundle is easy to spot.
+
 ## [0.12.2] - 2026-11-12
 
 ### Fixed
