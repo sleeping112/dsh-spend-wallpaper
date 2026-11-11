@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-11-12
+
+### Added
+
+- Per-scene **display settings**, so uploaded wallpapers no longer have to use
+  the automatic center-cover crop:
+  - fit: 铺满 `cover` / 完整 `contain` / 拉伸 `fill`;
+  - focal point X/Y (0–100%) — e.g. choose the top or bottom of a portrait
+    image/video;
+  - zoom 100–300%.
+  In the quick panel each tier has a 「显示」 button that opens these controls;
+  after an upload the editor opens automatically for that tier.
+- Settings persist as `sceneSettings` overrides (`POST /config`), are exposed in
+  `/state` per scene and in the wallpaper payload, and are applied to both
+  images and videos (including paused first-frame static mode).
+- Quick focal presets: 顶部 / 居中 / 底部.
+
 ## [0.11.2] - 2026-11-10
 
 ### Fixed (scene feature audit)

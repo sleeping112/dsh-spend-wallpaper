@@ -33,6 +33,10 @@ const STATE = {
     packId: 'default',
     tierIndex: 2,
     tierId: 'swell',
+    fit: 'contain',
+    x: 20,
+    y: 80,
+    scale: 1.2,
     transitionMs: 600,
   },
   rendering: {
@@ -166,6 +170,9 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
   assert.ok(video, 'a <video> frame must be created for a video wallpaper')
   assert.match(video.src, /\/plugins\/dsh-spend-wallpaper\/assets\/default\/2-swell\.webm/)
   assert.equal(video.muted, true)
+  assert.equal(video.style.objectFit, 'contain')
+  assert.equal(video.style.objectPosition, '20% 80%')
+  assert.match(video.style.transform, /scale\(1\.2\)/)
 
   const style = elements.find((element) => element.tagName === 'STYLE' && element.dataset.pluginCss === 'dsh-spend-wallpaper/client.css')
   assert.ok(style, 'the plugin stylesheet must be injected')

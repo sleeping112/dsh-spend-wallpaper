@@ -234,6 +234,18 @@ test('sanitizeOverrides accepts custom scene names', () => {
   assert.deepEqual(result.overrides.sceneNames, ['早饭', '', '晚饭'])
 })
 
+test('sanitizeOverrides accepts per-scene display settings', () => {
+  const result = sanitizeOverrides({ sceneSettings: [{ fit: 'contain', x: 20, y: 80, scale: 1.2 }] })
+  assert.equal(result.ok, true, result.errors.join('; '))
+  assert.deepEqual(result.overrides.sceneSettings, [{ fit: 'contain', x: 20, y: 80, scale: 1.2 }])
+})
+
+test('sanitizeOverrides rejects bad scene display settings', () => {
+  assert.equal(sanitizeOverrides({ sceneSettings: [{ fit: 'zoom', x: 50, y: 50, scale: 1 }] }).ok, false)
+  assert.equal(sanitizeOverrides({ sceneSettings: [{ fit: 'cover', x: 120, y: 50, scale: 1 }] }).ok, false)
+  assert.equal(sanitizeOverrides({ sceneSettings: [{ fit: 'cover', x: 50, y: 50, scale: 5 }] }).ok, false)
+})
+
 test('sanitizeOverrides rejects bad scene names', () => {
   assert.equal(sanitizeOverrides({ sceneNames: 'x' }).ok, false)
   assert.equal(sanitizeOverrides({ sceneNames: ['a'.repeat(41)] }).ok, false)

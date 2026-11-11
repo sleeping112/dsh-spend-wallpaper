@@ -12,6 +12,25 @@
 - 阈值：面板里的数字输入框或 `POST /config { "thresholds": [...] }`；
   第一项固定 0，必须严格递增。
 
+## 显示设置
+
+每档可单独配置画面适配（面板「显示」按钮）：
+
+| 参数 | 值 | 说明 |
+|---|---|---|
+| `fit` | `cover` / `contain` / `fill` | 铺满（裁切）/ 完整显示 / 拉伸 |
+| `x`, `y` | 0–100 | 裁切焦点，百分比；`y=0` 顶部、`50` 居中、`100` 底部 |
+| `scale` | 1–3 | 额外缩放 100%–300% |
+
+例如上传竖图后想保留顶部：
+
+```json
+POST /config
+{"sceneSettings":[{"fit":"cover","x":50,"y":0,"scale":1.1}]}
+```
+
+`/state` 的 `scenes[].settings` 和 `wallpaper.fit/x/y/scale` 会返回最终值。
+
 ## 支持格式
 
 | 类型 | 扩展名 / Content-Type |

@@ -57,6 +57,7 @@ const SCENES = Array.from({ length: 5 }, (_, index) => ({
   id: `tier-${index}`,
   label: ['满汉全席', '拉面自由', '咖喱饭', '白饭梅干', '空碗'][index],
   custom: false,
+  settings: { fit: 'cover', x: 50, y: 50, scale: 1 },
   imageUrl: `/s/${index}.webp`,
   videoUrl: `/s/${index}.webm`,
 }))
@@ -139,6 +140,13 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   nameInputs[0].dispatch('change')
   await flush()
   assert.ok(posts.some((post) => Array.isArray(post.sceneNames) && post.sceneNames[0] === '我的场景'), 'scene name edit is posted')
+
+  // Per-tier display settings (fit / focal point / zoom) can be edited.
+  findButton('显示').click()
+  await flush()
+  findButton('完整').click()
+  await flush()
+  assert.ok(posts.some((post) => Array.isArray(post.sceneSettings) && post.sceneSettings[0]?.fit === 'contain'), 'fit mode is posted')
 
   const inputs = panel.allNodes().filter((n) => n.className === 'dswp-threshold')
   inputs[1].value = '0.08'
