@@ -142,8 +142,10 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   assert.ok(posts.some((post) => Array.isArray(post.sceneNames) && post.sceneNames[0] === '我的场景'), 'scene name edit is posted')
 
   // Per-tier display settings (fit / focal point / zoom) can be edited.
+  documentStub.activeElement = nameInputs[0]
   findButton('调整画面').click()
   await flush()
+  assert.ok(findButton('完整'), 'display editor opens even with an input focused')
   findButton('完整').click()
   await flush()
   assert.ok(posts.some((post) => Array.isArray(post.sceneSettings) && post.sceneSettings[0]?.fit === 'contain'), 'fit mode is posted')

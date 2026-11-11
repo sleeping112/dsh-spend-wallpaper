@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-11-12
+
+### Fixed
+
+- 「调整画面」could appear to do nothing when a scene-name or numeric input was
+  still focused: the panel re-render guard skipped the rebuild. Button clicks now
+  force the rebuild, and the expanded editor scrolls into view. A regression test
+  covers the focused-input case.
+
 ## [0.12.1] - 2026-11-12
 
 ### Changed
