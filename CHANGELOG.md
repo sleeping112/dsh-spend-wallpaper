@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.4] - 2026-11-12
+
+### Fixed
+
+- **Fit / focal point / zoom changes looked like they did nothing.** The host
+  stored them, but the client poll compared only `wallpaper.src`, mode and
+  enabled, so layout-only updates were skipped until the scene changed. The diff
+  now also checks `fit/x/y/scale` and applies them to the current frame in place
+  (no video restart). The panel title shows `v0.12.4` to confirm the new bundle.
+
 ## [0.12.3] - 2026-11-12
 
 ### Changed

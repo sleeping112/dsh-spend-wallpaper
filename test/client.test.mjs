@@ -81,8 +81,20 @@ function createElement(tag) {
       if (index >= 0) this.parentNode.children.splice(index, 1)
       this.parentNode = null
     },
-    querySelector() { return null },
-    querySelectorAll() { return [] },
+    querySelector(selector) { return this.querySelectorAll(selector)[0] ?? null },
+    querySelectorAll(selector) {
+      const out = []
+      const visit = (node) => {
+        for (const child of node.children ?? []) {
+          const tagMatch = child.tagName === String(selector).toUpperCase()
+          const classMatch = String(selector).startsWith('.') && String(child.className ?? '').split(' ').includes(String(selector).slice(1))
+          if (tagMatch || classMatch) out.push(child)
+          visit(child)
+        }
+      }
+      visit(this)
+      return out
+    },
     addEventListener() {},
     removeEventListener() {},
     play() { return Promise.resolve() },
@@ -110,10 +122,11 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
     removeEventListener() {},
   }
   let captured = null
+  let pollCallback = null
   const windowStub = {
     __ModuleLoader__: { load(entry) { captured = entry } },
     matchMedia: () => ({ matches: false }),
-    setInterval: () => 1,
+    setInterval: (fn) => { pollCallback = fn; return 1 },
     clearInterval: () => {},
     setTimeout: (fn) => { fn(); return 1 },
     clearTimeout: () => {},
@@ -130,7 +143,7 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
     },
     fetch: async () => {
       fetchCalls += 1
-      return { ok: true, json: async () => STATE }
+      return { ok: true, json: async () => JSON.parse(JSON.stringify(STATE)) }
     },
     requestAnimationFrame: (fn) => { fn() },
     console,
@@ -173,6 +186,17 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
   assert.equal(video.style.objectFit, 'contain')
   assert.equal(video.style.objectPosition, '20% 80%')
   assert.match(video.style.transform, /scale\(1\.2\)/)
+
+  // Layout-only updates (fit/focal point/zoom) must apply even though the
+  // wallpaper src does not change.
+  STATE.wallpaper.fit = 'fill'
+  STATE.wallpaper.x = 10
+  STATE.wallpaper.y = 90
+  STATE.wallpaper.scale = 1.5
+  await pollCallback()
+  assert.equal(video.style.objectFit, 'fill')
+  assert.equal(video.style.objectPosition, '10% 90%')
+  assert.match(video.style.transform, /scale\(1\.5\)/)
 
   const style = elements.find((element) => element.tagName === 'STYLE' && element.dataset.pluginCss === 'dsh-spend-wallpaper/client.css')
   assert.ok(style, 'the plugin stylesheet must be injected')
