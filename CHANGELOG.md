@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-11-12
+
+### Changed
+
+- The per-scene display editor is now labelled 「调整画面」 and opens
+  automatically for the **currently active custom scene** when the panel is
+  opened, so an already-uploaded scene can be re-cropped without re-uploading.
+
 ## [0.12.0] - 2026-11-12
 
 ### Added

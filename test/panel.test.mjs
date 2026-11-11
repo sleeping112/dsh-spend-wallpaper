@@ -142,7 +142,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   assert.ok(posts.some((post) => Array.isArray(post.sceneNames) && post.sceneNames[0] === '我的场景'), 'scene name edit is posted')
 
   // Per-tier display settings (fit / focal point / zoom) can be edited.
-  findButton('显示').click()
+  findButton('调整画面').click()
   await flush()
   findButton('完整').click()
   await flush()
