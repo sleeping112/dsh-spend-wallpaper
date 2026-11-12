@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-11-13
+
+### Fixed / memory hardening
+
+- Video frames removed during wallpaper transitions or preview cleanup are now
+  paused, have their `src` cleared and call `load()` so the decoder/backing
+  buffers are released instead of waiting for GC.
+- The quick panel no longer rebuilds its whole DOM on every 20 s poll; it only
+  re-renders when the relevant snapshot signature changes.
+- The Windows titlebar probe nudge only runs when the appearance actually
+  changes, not on every poll, avoiding repeated native overlay IPC.
+- `/scenes/<tier>` now supports HTTP Range requests (206) for uploaded videos,
+  so Chromium loops/seeks no longer re-read the whole file.
+- Removed a stray `spend-wallpaper: disabled` entry that had been added to the
+  desktop profile patch (the plugin was unintentionally disabled).
+
 ## [0.13.0] - 2026-11-12
 
 ### Added
