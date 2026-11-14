@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-14
+
+### Added
+
+- The 🐋 floating button is now **draggable** (pointer/touch), with a drag
+  threshold so a normal click still opens/closes the panel. Its position is
+  persisted in `localStorage`, clamped to the window, restored on reload and
+  re-clamped on resize. The panel follows the button (opens above it, or below
+  when there is no room). Enter/Space still toggles the panel for keyboard use.
+
 ## [0.13.1] - 2026-11-13
 
 ### Fixed / memory hardening

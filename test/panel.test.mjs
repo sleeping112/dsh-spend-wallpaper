@@ -44,9 +44,18 @@ class Element {
   }
   querySelectorAll(sel) { return this.allNodes().filter((n) => n !== this && n.matches(sel)) }
   querySelector(sel) { return this.querySelectorAll(sel)[0] ?? null }
+  getBoundingClientRect() {
+    const left = Number.parseFloat(this.style.left || '900') || 900
+    const top = Number.parseFloat(this.style.top || '700') || 700
+    return { left, top, right: left + 42, bottom: top + 42, width: 42, height: 42 }
+  }
+  setPointerCapture() {}
+  releasePointerCapture() {}
   addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn) }
   removeEventListener(type, fn) { this.listeners[type] = (this.listeners[type] ?? []).filter((x) => x !== fn) }
-  dispatch(type) { for (const fn of this.listeners[type] ?? []) fn({ type, target: this }) }
+  dispatch(type, payload = {}) {
+    for (const fn of this.listeners[type] ?? []) fn({ type, target: this, preventDefault() {}, ...payload })
+  }
   click() { this.dispatch('click') }
   play() { return Promise.resolve() }
   pause() {}
@@ -92,6 +101,13 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   const windowStub = {
     __ModuleLoader__: { load(entry) { captured = entry } },
     matchMedia: () => ({ matches: false }),
+    innerWidth: 1200,
+    innerHeight: 800,
+    localStorage: {
+      store: new Map(),
+      getItem(key) { return this.store.get(key) ?? null },
+      setItem(key, value) { this.store.set(key, String(value)) },
+    },
     setInterval: () => 1, clearInterval: () => {},
     setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length },
     clearTimeout: (id) => { timers[id - 1] = null },
@@ -132,6 +148,16 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
 
   assert.ok(panel.allNodes().some((n) => n.textContent === '当前场景画面（已上传，可直接调）'), 'active uploaded scene shows its display editor without clicking')
   assert.ok(panel.allNodes().some((n) => n.className === 'dswp-scene-display'), 'active scene display controls are rendered')
+
+  // Floating button is draggable and saves its position.
+  button.dispatch('pointerdown', { button: 0, pointerId: 1, clientX: 900, clientY: 700 })
+  button.dispatch('pointermove', { pointerId: 1, clientX: 950, clientY: 650 })
+  button.dispatch('pointerup', { pointerId: 1, clientX: 950, clientY: 650 })
+  await flush()
+  assert.equal(button.style.left, '950px', 'drag moves the floating button horizontally')
+  assert.equal(button.style.top, '650px', 'drag moves the floating button vertically')
+  assert.equal(panel.hasAttribute('hidden'), false, 'dragging does not toggle the panel')
+  assert.ok(windowStub.localStorage.getItem('dsh-spend-wallpaper:quick-position'), 'button position is persisted')
 
   assert.equal(findButton('相框'), undefined)
   assert.equal(panel.allNodes().filter((n) => n.className === 'dswp-threshold').length, 5, 'one threshold input per tier')
