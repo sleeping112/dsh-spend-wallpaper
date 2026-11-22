@@ -6,6 +6,28 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-23
+
+### Added
+
+- Plugin Manager display metadata in `locale/en.json` and `locale/zh.json`,
+  a 180x180 raster icon, and two storefront screenshots declared in
+  `screenshots.json`.
+- `repository`, `homepage`, `bugs` and `author` metadata so the package and the
+  repository resolve to each other.
+
+### Changed
+
+- The DSH compatibility range now names the 0.2.2 prerelease branch explicitly,
+  so `0.2.2-rc.*` builds satisfy it.
+- `files` ships `locale/`, `assets/`, `icon.svg` and `screenshots.json` so an
+  installed copy carries the metadata and listing artwork.
+
+### Removed
+
+- The stale `dshhub` metadata block and the `scripts/pack-check.mjs` step that
+  was left in `prepublishOnly` after the pack format was removed.
+
 ## [0.14.0] - 2026-11-14
 
 ### Added

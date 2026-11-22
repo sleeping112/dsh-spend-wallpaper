@@ -1,168 +1,229 @@
-# dsh-spend-wallpaper · 余额壁纸
+# dsh-spend-wallpaper · Balance wallpaper
 
-按「最近 1 小时消耗的 DeepSeek 余额」切换 DSH Web GUI 背景壁纸的插件。内置 Q 版「DeepSeek 干饭」五档场景（静态 WebP + 动态 WebM），每档都可以上传自己的图片/视频，档位数量与阈值也可调。
+[![CI](https://github.com/sleeping112/dsh-spend-wallpaper/actions/workflows/ci.yml/badge.svg)](https://github.com/sleeping112/dsh-spend-wallpaper/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![DSH](https://img.shields.io/badge/DSH-0.2.x-4f8fe8.svg)](https://github.com/deepseek-ai/deepseek-harness)
 
-- 快速上手：[docs/quickstart.md](docs/quickstart.md)
-- 终端使用：[docs/terminal.md](docs/terminal.md)
-- 设计文档：[docs/design.md](docs/design.md)
-- 场景上传说明：[docs/scenes.md](docs/scenes.md)
-- 变更记录：[CHANGELOG.md](CHANGELOG.md)
-- 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md) · 安全说明：[SECURITY.md](SECURITY.md)
+A DeepSeek Harness bundle that paints the DSH Web UI with a wallpaper chosen
+from the DeepSeek balance spent during the **last rolling hour**. It ships a
+five-tier chibi scene set, lets every tier use its own uploaded image or video,
+and exposes a draggable whale button for a quick settings panel.
 
-## 特性
+The same package also contains a terminal CLI (`status` / `render`).
 
-- **每档自定义场景**：面板里每档可上传静态图片或动态视频，保存到插件状态目录并立即生效；每档有「显示」设置：铺满/完整/拉伸、焦点 X/Y（可快速选顶部/居中/底部）、缩放 100–300%，不会再被自动居中裁掉。也可一键清除回内置场景；每档名称可改，档位数量 2–8、阈值逐个可调。
-- **可变档位 + 迟滞 + 最短驻留**：默认 5 档阈值 `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/小时`，可增减档位并编辑边界，不会在边界抖动。
-- **三路数据源**：`dsh-cost-meter` 本地用量估算（默认优先，适配订阅/零钱包账号）→ 桌面登录账号钱包（`ctx.deepseekAccount`）→ 开放平台 `/user/balance`（API Key）；`manual` 用于联调。
-- **静态 / 动态可选**：`auto` / `static` / `dynamic`；尊重 `prefers-reduced-motion`，窗口不可见时暂停视频。
-- **五档 + 迟滞 + 最短驻留**：默认 5 档，阈值可调、档位数量可在面板里 2–8 增减，不会在边界抖动。
-- **铺满显示**：壁纸始终铺满整个窗口，界面半透明；聊天输入框、文件编辑/代码框、文档预览等内层表面也会透出壁纸（内层比面板略不透明，可用 `surfaceOpacity` 统一调）。
-- **方向可选**：`poor`（默认，越花越惨）/ `rich`（越花越豪华）。
-- **快捷切换**：右下角 🐋 悬浮球可拖动到任意位置（位置会记住，面板跟随球展开），点开面板可以上传/清除每档场景、增减档位、编辑阈值、预览档位、锁定/刷新/恢复默认，还能调面板不透明度、壁纸暗化、额外压暗、模糊、切换动画、采样间隔、统计窗口和防抖；改动即时生效并持久化，不用改 YAML 或重启。
-- **五档动画场景**：默认「DeepSeek 干饭」——花得越少吃越香：满汉全席 → 拉面 → 咖喱饭 → 白饭梅干 → 空碗流泪；另有「深海情绪」极光/鲸群/紫潮/风暴/海啸。每档一棵静态 WebP + 一段循环 WebM。
-- **状态持久化**：样本与档位存在 `$DSH_HOME/storages/spend-wallpaper/state.json`，重启不重新预热。
-- **终端可用**：`dsh-spend-wallpaper status` 看余额/档位，`render` 把当前档位渲染成 ANSI 字符画动画（详见 [docs/terminal.md](docs/terminal.md)）。
-
-## 安装
-
-插件通过 profile 的 patch 层插入一行 host 插件，浏览器半边由 `dsh.client` 声明自动提供。桌面 App 的图形步骤见 [快速上手](docs/quickstart.md)，命令行方式是：
+## Install
 
 ```sh
-# Web profile（可替换为 desktop 等 profile 名）
-dsh plugin --profile web add link:E:/workspace/dsh-spend-wallpaper
+# Desktop app profile (default desktop installation)
+dsh plugin --profile desktop add github:sleeping112/dsh-spend-wallpaper
+
+# Web profile
+dsh plugin --profile web add github:sleeping112/dsh-spend-wallpaper
 ```
 
-Desktop profile 用插件管理器（设置 → 插件）安装同一个 `link:` 路径，或使用 Desktop 内置命令运行时执行同样的 `dsh plugin --profile desktop add link:...`。
+Restart DSH (or let HMR finish), then look for the 🐋 button in the bottom-right
+corner of the window. The plugin appears under **Settings → Plugins** as
+**Balance wallpaper / 余额壁纸**.
 
-安装后重启 profile（或等 HMR 重载）即可生效。
-
-## 配置
-
-所有字段都是 Cordis `Config` 的 volatile 字段。M0 阶段通过 profile 的 `cordis.patch.yml` 配置（改完重启 profile，或启用 HMR 时等待重载）；也可以使用 [examples/profile-patch.yml](examples/profile-patch.yml) 作为 overlay 传给启动器：
+Local development install:
 
 ```sh
-dsh --profile web --patch E:/workspace/dsh-spend-wallpaper/examples/profile-patch.yml
+dsh plugin --profile desktop add link:/absolute/path/to/dsh-spend-wallpaper
 ```
+
+## How it works
+
+1. The host samples a balance source and keeps the values in a rolling window.
+2. The hourly spend is `balance(now) − balance(now − 60 min)`; it is mapped to a
+   tier with hysteresis and a minimum dwell time so the scene does not flicker
+   at a boundary.
+3. The client polls the host snapshot and renders the selected scene as a
+   full-bleed fixed background. Panels, the chat composer, file-edit/code boxes
+   and the document preview use semi-transparent theme tokens so the wallpaper
+   stays visible; `surfaceOpacity`, `scrim` and `dim` tune readability.
+
+Data sources, in `auto` order:
+
+| Order | Source | When it works |
+|---|---|---|
+| 1 | `dsh-cost-meter` local usage estimate | When `dsh-cost-meter` is installed; works for subscription or zero-wallet accounts |
+| 2 | Signed-in desktop account wallet | When DSH is signed in |
+| 3 | `https://api.deepseek.com/user/balance` | When `DEEPSEEK_API_KEY` is available |
+| — | `manual` | Fixed value for testing |
+
+Only source 3 performs a network request, and only to the official API origin.
+
+## Features
+
+- **Full-bleed wallpaper** with translucent DSH surfaces (shell panels, chat
+  composer, file-edit boxes, code blocks, document preview).
+- **Rolling 1-hour spend**, not "spent today": a recharge or bonus reversal is
+  treated as zero spend.
+- **Configurable tiers**: 2–8 tiers, every threshold editable from the panel or
+  `POST /config`; default thresholds are `0 / 0.05 / 0.30 / 1.50 / 6.00 ¥/h`.
+- **Per-tier scenes**: the built-in five scenes can be replaced independently by
+  uploading a PNG/JPEG/WebP/GIF/AVIF image or a WebM/MP4/MOV video.
+- **Display settings per tier**: cover / contain / stretch, focal point X/Y
+  (with top/center/bottom presets) and 100–300% zoom, applied to images and
+  videos.
+- **Per-tier scene names** editable from the panel; tier labels are saved.
+- **Static/dynamic media**: `auto`, `static`, `dynamic`; honors
+  `prefers-reduced-motion` and pauses videos while the window is hidden.
+- **Draggable quick panel**: the 🐋 button can be moved anywhere; the position is
+  remembered and the panel opens beside it.
+- **Preview, lock, refresh, reset**: preview any tier for 15 seconds, lock a tier,
+  refresh the source, or clear all presentation overrides.
+- **Terminal surface**: `dsh-spend-wallpaper status` and `render` work from a
+  terminal without the GUI.
+- **Persistence**: samples, tier and scene overrides live in
+  `$DSH_HOME/storages/spend-wallpaper/state.json`; uploaded media lives under
+  `$DSH_HOME/storages/spend-wallpaper/scenes/`.
+
+## Screenshots
+
+![DSH Web UI with a wallpaper behind the chat and sidebar](assets/screenshots/dsh-wallpaper.png)
+
+![Built-in "DeepSeek Eats" scene: a feast](assets/screenshots/scene-feast.png)
+
+Screenshots are declared in [screenshots.json](screenshots.json). The first is a
+capture of the desktop UI; the second is the built-in tier-0 scene.
+
+## Quick panel
+
+Open the panel with the 🐋 button (or `Enter`/`Space` after focusing it):
+
+- **当前场景画面**: when the active tier is a custom scene, fit/focal/zoom
+  controls are shown immediately;
+- **档位与阈值**: `−`/`+` changes the tier count, each threshold is a number
+  field;
+- **每档场景**: editable name, **上传**, **清除** and **调整画面** per tier;
+- **外观**: panel opacity, wallpaper scrim, extra dim, blur;
+- **动画**, **采样间隔**, **统计窗口**, **防抖**;
+- **预览档位**, **锁定**, **刷新数据**, **关闭壁纸**, **恢复默认**.
+
+Changes apply immediately and persist. The panel title carries the package
+version, which makes it easy to tell a stale client bundle from a fresh one.
+
+## Scenes and uploads
+
+Built-in scenes live in `lib/assets/scenes/` and are copied on startup to:
+
+```text
+$DSH_HOME/storages/spend-wallpaper/scenes/
+├─ builtin-0.webp / builtin-0.webm
+├─ custom-0.png
+└─ ...
+```
+
+Uploads accept images (`png`, `jpg`, `jpeg`, `webp`, `gif`, `avif`) and videos
+(`webm`, `mp4`, `mov`, `m4v`). See [docs/scenes.md](docs/scenes.md) for the
+display settings, the HTTP routes and the storage layout.
+
+## Configuration
+
+All fields are volatile Cordis `Config` fields. Most are also available from the
+panel. Advanced users can patch the profile:
 
 ```yaml
 - id: spend-wallpaper
   config:
-    source: manual          # 先用 manual 联调
-    manualSpend: "0.40"     # 假装最近 1 小时花了 ¥0.40
-    media: auto             # auto / static / dynamic
+    source: auto
+    windowMinutes: 60
+    sampleSeconds: 180
     thresholds: ["0", "0.05", "0.30", "1.50", "6.00"]
+    media: auto
+    scrim: 0.10
+    dim: 0.03
 ```
 
-| 字段 | 默认 | 说明 |
+| Field | Default | Meaning |
 |---|---|---|
-| `enabled` | `true` | 总开关 |
-| `source` | `auto` | `auto` / `cost-meter` / `account` / `api` / `manual`；`auto` 顺序为 cost-meter → account → api |
-| `currency` | `CNY` | 显示与阈值币种 |
-| `apiBase` | `https://api.deepseek.com` | 仅允许官方域名 |
-| `apiKeyEnv` | `DEEPSEEK_API_KEY` | 经 `ctx.credentials` 或环境变量解析 |
-| `windowMinutes` | `60` | 滚动窗口（5–180） |
-| `sampleSeconds` | `180` | 采样间隔（60–600） |
-| `direction` | `poor` | `poor` / `rich`（旧字段，每档场景固定后基本不用） |
+| `enabled` | `true` | Master switch |
+| `source` | `auto` | `auto` / `cost-meter` / `account` / `api` / `manual` |
+| `currency` | `CNY` | Display currency and threshold unit |
+| `apiBase` | `https://api.deepseek.com` | Official origin only |
+| `apiKeyEnv` | `DEEPSEEK_API_KEY` | Resolved through `ctx.credentials` or the environment |
+| `windowMinutes` | `60` | Rolling window, 5–180 |
+| `sampleSeconds` | `180` | Sampling interval, 60–600 |
 | `media` | `auto` | `auto` / `static` / `dynamic` |
-| `scrim` / `dim` / `blur` | `.10` / `.03` / `0` | 可读性、氛围与壁纸模糊 |
-| `surfaceOpacity` | `.50` | 面板不透明度（越低壁纸越明显） |
-| `transitionMs` | `600` | 交叉淡入时长 |
-| `hysteresis` | `.25` | 越过阈值 25% 才换档 |
-| `minDwellSeconds` | `600` | 最短驻留时间 |
-| `thresholds` | `["0","0.05","0.30","1.50","6.00"]` | 档位边界（字符串，严格递增，2–8 档，第一项固定 0） |
-| `manualSpend` | `"0"` | `source=manual` 时的固定消耗 |
-| `lockedTier` | `""` | 锁定档位 id 或序号，空 = 自动 |
+| `scrim` / `dim` / `blur` | `.10` / `.03` / `0` | Readability and atmosphere |
+| `surfaceOpacity` | `.45` | Shell/inner-surface opacity (lower = more wallpaper) |
+| `transitionMs` | `600` | Cross-fade duration |
+| `hysteresis` | `.25` | Fraction of a threshold that must be crossed |
+| `minDwellSeconds` | `600` | Minimum time in a tier |
+| `thresholds` | `["0","0.05","0.30","1.50","6.00"]` | 2–8 ascending decimal strings, first is 0 |
+| `manualSpend` | `"0"` | Fixed value for `source: manual` |
+| `lockedTier` | `""` | Tier id/index to pin, empty = auto |
 
-## 场景
+## HTTP routes
 
-内置 5 档 Q 版干饭场景在 `lib/assets/scenes/`。运行时会复制到
-`$DSH_HOME/storages/spend-wallpaper/scenes/`，每档上传的图片/视频也保存在这里：
+All routes are under `/plugins/dsh-spend-wallpaper/` and enforce a same-origin
+fence. The host binds to loopback by default.
 
-```
-$DSH_HOME/storages/spend-wallpaper/scenes/
-├─ builtin-0.webp / builtin-0.webm   # 内置场景副本
-├─ custom-0.png                      # 第 1 档上传的图片
-└─ ...
-```
-
-上传支持位图（png/jpg/webp/gif/avif）与视频（webm/mp4/mov）；面板里每档可单独上传或清除回内置。档位数量与阈值也在面板里改，或直接 POST `/config` 的 `thresholds` 数组。
-
-## 项目结构
-
-```
-bin/                 终端 CLI 入口（dsh-spend-wallpaper status / render）
-lib/                 发布内容：host 模块 + client bundle + 终端渲染器 + 内置素材
-test/                node --test 测试（host / client / assets / terminal）
-scripts/             build-client.mjs、gen-anime-assets.py
-docs/                quickstart.md、terminal.md、design.md、scenes.md
-examples/            manual 模式 profile overlay
-.github/workflows/   CI（Node 20 / 22）
-```
-
-本项目没有编译步骤：`lib/` 是手写 ESM 源码，`lib/client.js` 是单个自包含的 DSH client bundle。
-
-## 终端使用
-
-DSH 在终端里跑（或你只想在 shell 里看消耗）时，用同一个包里的 CLI：
-
-```sh
-# 直接运行（无需全局安装）
-node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs status
-node E:\workspace\dsh-spend-wallpaper\bin\dsh-spend-wallpaper.mjs render
-
-# 或 npm link 之后全局使用
-dsh-spend-wallpaper status --json
-dsh-spend-wallpaper render --tier 4 --once
-```
-
-完整说明（动画、颜色模式、提示符集成、限制）见 [docs/terminal.md](docs/terminal.md)。
-
-## 开发与测试
-
-```sh
-npm test                      # node --test：host + client + assets + terminal
-node scripts/build-client.mjs # 校验 client bundle 包装形态
-npm run demo                  # 终端渲染一帧示例
-```
-
-HTTP 接口（同源、只读为主）：
-
-| 方法与路径 | 说明 |
+| Method and path | Purpose |
 |---|---|
-| `GET /plugins/dsh-spend-wallpaper/state` | 当前快照（`no-store`） |
-| `GET /plugins/dsh-spend-wallpaper/scenes/<tier>?kind=image|video` | 当前档场景文件（上传或内置） |
-| `POST /plugins/dsh-spend-wallpaper/scenes/<tier>` | 上传图片/视频（raw body + content-type） |
-| `POST /plugins/dsh-spend-wallpaper/scenes/<tier>/reset` | 清除该档上传，回到内置场景 |
-| `POST /plugins/dsh-spend-wallpaper/refresh` | 立即采样（10 秒限流） |
-| `POST /plugins/dsh-spend-wallpaper/config` | `{thresholds, media, scrim, ...}`；`{reset:true}` 清除覆盖 |
+| `GET .../state` | Current snapshot (`no-store`) |
+| `GET .../scenes/<tier>?kind=image\|video` | Current scene file (built-in or uploaded; supports Range) |
+| `POST .../scenes/<tier>` | Upload an image/video as raw body + Content-Type |
+| `POST .../scenes/<tier>/reset` | Remove the uploaded scene and return to the built-in one |
+| `POST .../refresh` | Sample immediately (10 s throttle) |
+| `POST .../config` | Thresholds, media, opacity, sampling and other presentation overrides; `{reset:true}` clears overrides |
 
-`source=manual` + `POST /refresh` 可以在不真实烧钱的情况下把所有档位过一遍。
+## Terminal
 
-## 已验证（2026-11-09，DSH 0.2.2-rc.1）
+```sh
+node bin/dsh-spend-wallpaper.mjs status
+node bin/dsh-spend-wallpaper.mjs render
+node bin/dsh-spend-wallpaper.mjs render --tier 4 --once
+```
 
-- 组合装载：临时 profile 中 `dsh --profile <p> --dump-config` 出现 `spend-wallpaper` 行；`--dump-config-schema` 成功导入 `Config` 并投影出 volatile 字段（说明 `@deepseek-ai/schemastery` 可由宿主 runtime resolution 解析）。
-- 真实宿主：`dsh --profile <p> --port 0 --no-open` 启动后
-  - `GET /plugins/dsh-spend-wallpaper/state` 返回完整快照（未配置数据源时 `status: unavailable`，不会报错刷屏）；
-  - `GET /plugins/dsh-spend-wallpaper/scenes/<tier>?kind=image|video` 返回当前档场景（内置或上传）；
-  - `GET .../assets/default/0-calm.webp` → `200 image/webp`，`.webm` → `200 video/webm`，带 ETag / `max-age=3600`；目录穿越 → `404`，`Sec-Fetch-Site: cross-site` → `403`；
-  - `POST .../refresh` → 返回刷新后的快照；
-  - `source=manual, manualSpend=0.40` → `tier=2「起浪」`、`next=1.50「浪涌」`，素材 URL 指向 `2-swell.webm`。
-- 自动化测试：`npm test` 覆盖 host 逻辑、client bundle 生命周期（stub DOM）、内置素材完整性与终端渲染/CLI。
-- 终端 surface：`npm run demo` 与 `render --tier N --once` 在本机 PowerShell 实测可输出 ANSI 真彩色/单色字符画；`status` 能读取 Host 写入的快照。
-- 实机运行（2026-11-10，桌面 App）：插件以 `link:E:/workspace/dsh-spend-wallpaper` 装入 desktop profile 后 Host 激活，`source=auto` 选中 `cost-meter`（账号钱包为 0 时仍能工作），`/state` 返回档位与素材 URL；`status` 显示「本地用量估算」。
-- 素材：5 × 2560×1440 WebP + 5 × 960×540 VP9 WebM（3.3s），由 `scripts/gen-anime-assets.py` 程序化生成。
+The CLI only reads the persisted snapshot; it does not need the GUI to be open.
+See [docs/terminal.md](docs/terminal.md).
 
-**未验证**：真实浏览器里的视觉效果（铺满显示、视频自动播放、reduced-motion、Desktop 载体的 file:// fetch 桥）。这些属于 M1 的浏览器回归测试。
+## Development
 
-## 已知限制
+```sh
+npm test                       # host + client + assets + terminal tests
+node scripts/build-client.mjs  # validate the client bundle wrapper
+npm run demo                   # render one ANSI frame
+```
 
-- 铺满显示依赖 Web 壳的 `<body><div id="root">…` 结构，以及 `--dsw-alias-bg-base` / `--dsw-specific-sidebar-fill` 两个主题 token。宿主大版本升级后若结构变化，插件最坏情况是壁纸不可见，不会破坏界面。
-- 余额接口有分钟级计费延迟；窗口值标注为"约"。充值/赠送回收按 0 消耗处理。
-- 同一账号在其它设备上的消耗会计入余额差（这是"账号消耗"而非"本机消耗"）。
-- `cost-meter` 数据源依赖已安装的 `dsh-cost-meter`（读取其 `getState()` 的今日成本计数器并差分），金额是**本地估算**，与官方账单存在分钟级差异；未安装时自动回退到账号余额/API Key。
-- 暂不做 Windows 桌面壁纸（设计文档中的 v2 适配器）。
-- 终端里的 `render` 是字符画简化版（渐变+波浪+星光），不是终端模拟器的真实背景图；详见 [docs/terminal.md](docs/terminal.md)。
+The client is a single self-contained `lib/client.js` Module Loader bundle; host
+code is plain ESM. There is no compile step for the plugin itself. The built-in
+artwork is generated by `scripts/gen-anime-assets.py` (Pillow + numpy + ffmpeg).
+
+Project layout:
+
+```text
+bin/                  terminal CLI entry
+lib/                  host modules, client bundle, scenes, terminal renderer
+locale/               Plugin Manager metadata (en/zh)
+assets/               icon and README screenshots
+test/                 node --test suites
+docs/                 quickstart, scenes, terminal, design
+scripts/              build-client.mjs, gen-anime-assets.py
+cordis.patch.yml      bundle patch (one host row)
+```
+
+## Known limitations
+
+- The rolling window is **account-wide**: usage from another device signed into
+  the same account is included.
+- Balance APIs have minute-level billing delay; the value is approximate.
+- `cost-meter` is a local estimate based on `dsh-cost-meter`'s counter and can
+  differ from the official bill by a small amount.
+- Native window-control transparency depends on Electron/Windows support; the
+  in-app titlebar strip and the wallpaper are handled by the client.
+- This is a DSH Web UI background, not a Windows desktop wallpaper.
+- The terminal `render` command draws an ANSI approximation, not terminal
+  emulator artwork.
+
+## Security
+
+The API key stays in the host process and is never included in snapshots or the
+browser bundle. See [SECURITY.md](SECURITY.md) for the full boundary.
 
 ## License
 
-插件代码 [MIT](LICENSE)；内置素材由 `scripts/gen-anime-assets.py` 程序化生成，[CC0-1.0](LICENSE-ASSETS)。
+Plugin code: [MIT](LICENSE). Built-in procedurally generated artwork:
+[CC0-1.0](LICENSE-ASSETS).

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Balance wallpaper",
+    "description": "Paints the DSH Web UI with a wallpaper chosen from the DeepSeek balance spent in the last hour. A draggable whale button in the bottom-right corner opens a quick panel: upload an image or video per tier, edit tier count and thresholds, preview tiers, and adjust opacity, dimming and blur. Balance comes from dsh-cost-meter, the signed-in account wallet, or DEEPSEEK_API_KEY; values stay on this machine and the API key never reaches the browser."
+  }
+}

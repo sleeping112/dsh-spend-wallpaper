@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "余额壁纸",
+    "description": "按最近 1 小时消耗的 DeepSeek 余额切换 DSH Web GUI 壁纸。右下角可拖动的鲸鱼按钮打开快捷面板：每档上传图片或视频、增删档位、编辑阈值、预览档位，并调整不透明度、暗化和模糊。余额来源为 dsh-cost-meter、登录账号钱包或 DEEPSEEK_API_KEY；数据只留在本机，API Key 不会进入浏览器。"
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the "DeepSeek Eats" chibi-anime wallpaper pack.
+"""Generate the "DeepSeek Eats" chibi-anime wallpaper scene set.
 
 Five tiers of DeepSeek-chan (the whale) at the dinner table. The twist: the
 less money you spend, the better the meal tastes.
@@ -15,14 +15,13 @@ result is license-clean. Static stills are 2560x1440 WebP; loops are short VP9
 clips rendered at 960x540.
 
 Usage:
-  python scripts/gen-anime-assets.py [--out lib/assets/packs/deepseek-eats]
+  python scripts/gen-anime-assets.py [--out lib/assets/scenes]
                                      [--skip-video] [--only-tiers 0,1]
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import os
 import shutil
@@ -564,31 +563,9 @@ def encode_video(tier: int, output: Path, ffmpeg: str) -> None:
         raise SystemExit(f"ffmpeg failed for {output}")
 
 
-def manifest() -> dict:
-    return {
-        "schema": 1,
-        "id": "deepseek-eats",
-        "name": {"zh": "DeepSeek 干饭", "en": "DeepSeek Eats"},
-        "description": {
-            "zh": "越省越香：DeepSeek 鲸在餐桌前的五档表情。花得越少吃得越香；花多了只能空碗流泪。",
-            "en": "Chibi DeepSeek whale at the dinner table. Spend less, eat better; spend a lot and the bowl is empty.",
-        },
-        "author": "dsh-spend-wallpaper",
-        "license": "CC0-1.0 (generated artwork)",
-        "direction": "poor",
-        "tiers": [
-            {"id": spec["id"], "min": ["0", "0.05", "0.30", "1.50", "6.00"][index],
-             "label": spec["label"], "static": f"{spec['file']}.webp",
-             "dynamic": {"type": "video", "src": f"{spec['file']}.webm", "poster": f"{spec['file']}.webp"}}
-            for index, spec in enumerate(TIERS)
-        ],
-        "defaults": {"scrim": 0.12, "dim": 0.03, "blur": 0, "transitionMs": 600},
-    }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "lib" / "assets" / "packs" / "deepseek-eats"))
+    parser.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "lib" / "assets" / "scenes"))
     parser.add_argument("--ffmpeg", default=os.environ.get("FFMPEG") or shutil.which("ffmpeg"))
     parser.add_argument("--skip-video", action="store_true")
     parser.add_argument("--only-tiers", default="")
@@ -596,7 +573,6 @@ def main() -> int:
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "manifest.json").write_text(json.dumps(manifest(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     only = {int(value) for value in args.only_tiers.split(",") if value.strip()} if args.only_tiers else set(range(5))
 
     for index, spec in enumerate(TIERS):

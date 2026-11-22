@@ -1,7 +1,7 @@
 {
   "name": "dsh-spend-wallpaper",
-  "version": "0.14.0",
-  "description": "DeepSeek Harness 插件：按最近 1 小时余额消耗切换静态/动态壁纸。Wallpaper that follows the DeepSeek balance spent in the last hour.",
+  "version": "1.0.0",
+  "description": "DSH Web UI wallpaper driven by the DeepSeek balance spent in the last hour, with per-tier uploadable scenes and a draggable quick panel.",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
@@ -11,14 +11,22 @@
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
     "./terminal": "./lib/terminal-cli.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
   "files": [
     "bin",
     "lib",
+    "locale",
+    "assets",
     "cordis.patch.yml",
+    "icon.svg",
+    "screenshots.json",
     "README.md",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "LICENSE",
     "LICENSE-ASSETS",
     "docs",
@@ -34,26 +42,7 @@
       "immediately": true
     },
     "compatibility": {
-      "dsh": ">=0.2.0-rc.1 <0.3.0-0"
-    }
-  },
-  "dshhub": {
-    "schemaVersion": 1,
-    "displayName": "余额壁纸",
-    "summary": "按最近 1 小时消耗的 DeepSeek 余额切换壁纸（内置 5 档动态/静态素材包，支持自定义素材）。",
-    "categories": [
-      "Web UI",
-      "观测",
-      "娱乐"
-    ],
-    "surfaces": [
-      "host",
-      "web"
-    ],
-    "permissions": {
-      "network": [
-        "https://api.deepseek.com"
-      ]
+      "dsh": ">=0.2.0-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"
     }
   },
   "keywords": [
@@ -64,10 +53,19 @@
     "wallpaper",
     "balance",
     "cost",
+    "usage",
     "web-ui"
   ],
-  "author": "dsh-spend-wallpaper contributors",
+  "author": "sleeping112",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sleeping112/dsh-spend-wallpaper.git"
+  },
+  "homepage": "https://github.com/sleeping112/dsh-spend-wallpaper#readme",
+  "bugs": {
+    "url": "https://github.com/sleeping112/dsh-spend-wallpaper/issues"
+  },
   "os": [
     "win32",
     "darwin",
@@ -75,7 +73,7 @@
   ],
   "engines": {
     "node": ">=20",
-    "dsh": ">=0.2.0-rc.1 <0.3.0-0"
+    "dsh": ">=0.2.0-rc.1 <0.2.2-0 || >=0.2.2-rc.1 <0.3.0-0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.1.0",
@@ -87,6 +85,6 @@
     "build": "node scripts/build-client.mjs",
     "terminal": "node bin/dsh-spend-wallpaper.mjs",
     "demo": "node bin/dsh-spend-wallpaper.mjs render --tier 2 --once",
-    "prepublishOnly": "npm test && node scripts/build-client.mjs && node scripts/pack-check.mjs"
+    "prepublishOnly": "npm test && node scripts/build-client.mjs"
   }
 }

@@ -16,10 +16,17 @@ runtime dependencies beyond the packages the host already provides
 ## Development workflow
 
 ```sh
-npm test                     # all host + client + asset tests (node --test)
+npm test                      # host + client + asset tests (node --test)
 node scripts/build-client.mjs # validate the browser bundle wrapper
-node scripts/pack-check.mjs  # validate the built-in wallpaper pack
-npm run gen:assets           # regenerate built-in WebP/WebM artwork (ffmpeg)
+npm run demo                  # render one ANSI frame
+```
+
+Regenerating the built-in scenes is optional and overwrites the committed
+files in `lib/assets/scenes/`:
+
+```sh
+python scripts/gen-anime-assets.py --skip-video # five WebP stills
+python scripts/gen-anime-assets.py              # stills + WebM loops (needs ffmpeg)
 ```
 
 There is no compile step: `lib/` is hand-authored ES module source and
@@ -38,18 +45,26 @@ unless a build step is justified in an issue.
   the terminal surface. `terminal.js` must stay pure (no DSH imports, no
   filesystem/process access); all state loading and animation lives in
   `terminal-cli.js`.
-- `lib/assets/packs/default/` — built-in pack; media is committed (users install
-  through `link:` and expect the pack to work without a build).
+- `lib/assets/scenes/` — the five built-in WebP stills and five WebM loops.
+  Media is committed: users install through `link:` or a Git checkout and expect
+  the scenes to work without a build. They are copied to
+  `$DSH_HOME/storages/spend-wallpaper/scenes/` on first start.
+- `locale/` — Plugin Manager metadata (`meta.title`, `meta.description`) for
+  `en` and `zh`.
+- `assets/` — plugin icon and storefront screenshots; keep `screenshots.json`
+  in sync with the files it lists.
 - `test/` — Node test-runner files (`*.test.mjs`).
-- `docs/` — design and pack-authoring documentation.
+- `docs/` — quickstart, scene/upload formats, terminal reference and design
+  notes. `docs/design.md` keeps historical sections and is labelled as such.
 
-## Adding a wallpaper pack
+## Built-in artwork
 
-Do not add third-party artwork to this repository unless you can license it.
-The built-in pack is generated from code so it stays CC0. User packs belong in
-`$DSH_HOME/spend-wallpaper/packs/<id>/` on the user's machine; see
-[docs/packs.md](docs/packs.md) for the manifest format and how to validate a
-pack with `node scripts/pack-check.mjs <dir>`.
+The built-in scenes are generated from code by
+`scripts/gen-anime-assets.py` (Pillow + numpy, no third-party artwork or
+fonts), so they stay CC0. Do not add third-party artwork to this repository
+unless you can license it. Uploaded scenes are user data and live under
+`$DSH_HOME/storages/spend-wallpaper/scenes/`; see [docs/scenes.md](docs/scenes.md)
+for the formats and HTTP routes.
 
 ## Commit style
 
@@ -58,10 +73,8 @@ host and client halves in the same commit when a protocol change spans both.
 
 ## Pull requests
 
-- Run `npm test`, `node scripts/build-client.mjs` and
-  `node scripts/pack-check.mjs` before opening a PR.
+- Run `npm test` and `node scripts/build-client.mjs` before opening a PR.
 - Describe any change to the HTTP payload or the client DOM/token assumptions;
   both are versioned against DSH releases.
 - When bumping the DSH compatibility range, update `package.json`
-  (`dsh.compatibility.dsh`, `engines.dsh`) and the "Verified" section in the
-  README.
+  (`dsh.compatibility.dsh`, `engines.dsh`) and any affected README section.
