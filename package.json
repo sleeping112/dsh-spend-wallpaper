@@ -1,6 +1,6 @@
 {
   "name": "dsh-spend-wallpaper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DSH Web UI wallpaper driven by the DeepSeek balance spent in the last hour, with per-tier uploadable scenes and a draggable quick panel.",
   "type": "module",
   "main": "lib/index.js",

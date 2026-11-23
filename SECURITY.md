@@ -12,16 +12,20 @@ the affected DSH version.
   `ctx.credentials` (or the launch environment) only in the host half. It is
   never sent to the browser, never embedded in snapshot payloads, and never
   written to the state file.
-- **Loopback-first HTTP surface.** `/plugins/dsh-spend-wallpaper/*` is served by
-  the DSH host webserver. Every route applies a same-origin fence and the
-  server binds to loopback by default. If the host is exposed beyond loopback,
-  the routes become reachable by that network — deploy behind a trusted proxy.
-- **No remote media fetches.** The client only loads assets served by the host
-  from discovered pack directories. User packs cannot use SVG (script surface)
-  and asset paths are confined to the pack root with `realpath` checks.
+- **Authenticated HTTP surface.** `/plugins/dsh-spend-wallpaper/*` is served by
+  the DSH host webserver. Every route first applies DSH's Connection guard
+  (`ctx.connection.requestRejection`), which enforces the Host/Origin fence and
+  requires an authenticated browser or API session; a same-origin check remains
+  as a second layer. The server binds to loopback by default. If the host is
+  exposed beyond loopback, the routes stay limited to sessions authenticated by
+  that deployment — still deploy behind a trusted proxy.
+- **No remote media fetches.** The client only loads scenes served by the host
+  from `$DSH_HOME/storages/spend-wallpaper/scenes/`. Uploads are size-limited,
+  restricted to raster images (PNG/JPEG/WebP/GIF/AVIF) and videos
+  (WebM/MP4/MOV/M4V), and no SVG is accepted.
 - **No telemetry.** Balance amounts and usage never leave the machine.
 
 ## Supported versions
 
-Security fixes target the latest `0.1.x` line and the DSH range declared in
+Security fixes target the latest `1.x` line and the DSH range declared in
 `package.json` (`dsh.compatibility.dsh`).

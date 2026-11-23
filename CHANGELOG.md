@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-23
+
+### Fixed
+
+- Every plugin HTTP route now runs DSH's Connection guard
+  (`ctx.connection.requestRejection`) before doing any work, so only requests
+  from an authenticated browser or API session on this listener can read state
+  and scenes or change configuration. The existing same-origin fence stays as a
+  second check.
+
 ## [1.0.0] - 2026-11-23
 
 ### Added

@@ -157,8 +157,10 @@ panel. Advanced users can patch the profile:
 
 ## HTTP routes
 
-All routes are under `/plugins/dsh-spend-wallpaper/` and enforce a same-origin
-fence. The host binds to loopback by default.
+All routes are under `/plugins/dsh-spend-wallpaper/` and require a
+DSH-authenticated browser or API session on this listener
+(`ctx.connection.requestRejection`), on top of a same-origin fence. The host
+binds to loopback by default.
 
 | Method and path | Purpose |
 |---|---|
