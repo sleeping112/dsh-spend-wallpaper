@@ -146,6 +146,7 @@ test('bundle installs the wallpaper layer, renders state and disposes cleanly', 
       return { ok: true, json: async () => JSON.parse(JSON.stringify(STATE)) }
     },
     requestAnimationFrame: (fn) => { fn() },
+    AbortController,
     console,
     URL,
     JSON,

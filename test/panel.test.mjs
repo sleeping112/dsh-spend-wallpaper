@@ -139,6 +139,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
     window: windowStub, document: documentStub,
     MutationObserver: class { observe() {} disconnect() {} },
     fetch: fetchMock, requestAnimationFrame: (fn) => fn(), console,
+    AbortController,
     URL, JSON, Promise, Number, Math, String, Array, Object, Set, Map,
   }
   sandbox.globalThis = sandbox
