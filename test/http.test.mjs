@@ -6,9 +6,13 @@
  */
 
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { PassThrough } from 'node:stream'
 import test from 'node:test'
 
-import { registerRoutes } from '../lib/http.js'
+import { parseByteRange, registerRoutes } from '../lib/http.js'
 
 const PREFIX = '/plugins/dsh-spend-wallpaper'
 
@@ -197,4 +201,83 @@ test('the returned disposer removes every route', () => {
   assert.equal(routes.size, 4)
   dispose()
   assert.equal(routes.size, 0)
+})
+
+test('parseByteRange handles explicit, suffix, capped and invalid ranges', () => {
+  assert.deepEqual(parseByteRange('bytes=0-9', 100), { start: 0, end: 9 })
+  assert.deepEqual(parseByteRange('bytes=90-', 100), { start: 90, end: 99 })
+  assert.deepEqual(parseByteRange('bytes=0-999', 100), { start: 0, end: 99 })
+  assert.deepEqual(parseByteRange('bytes=-10', 100), { start: 90, end: 99 })
+  assert.deepEqual(parseByteRange('bytes=-200', 100), { start: 0, end: 99 })
+  assert.deepEqual(parseByteRange('bytes=200-', 100), { unsatisfiable: true })
+  assert.deepEqual(parseByteRange('bytes=5-3', 100), { unsatisfiable: true })
+  assert.deepEqual(parseByteRange('bytes=-0', 100), { unsatisfiable: true })
+  assert.deepEqual(parseByteRange('bytes=-', 100), { unsatisfiable: true })
+  assert.equal(parseByteRange('bytes=0-1,3-4', 100), null)
+  assert.equal(parseByteRange('bytes=abc', 100), null)
+  assert.equal(parseByteRange(undefined, 100), null)
+})
+
+test('scene responses stream ranges and answer HEAD without a body', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-spend-wallpaper-http-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const file = path.join(dir, 'clip.webm')
+  const bytes = Buffer.from(Array.from({ length: 100 }, (_, index) => index))
+  fs.writeFileSync(file, bytes)
+
+  const runtime = createRuntime()
+  runtime.sceneFile = () => ({ path: file, contentType: 'video/webm' })
+  const { ctx, routes } = createContext(undefined)
+  registerRoutes(ctx, runtime)
+  const handler = routes.get(`${PREFIX}/scenes`).handler
+
+  const collect = (res) => {
+    const chunks = []
+    res.on('data', (chunk) => chunks.push(chunk))
+    return new Promise((resolve, reject) => {
+      res.on('end', () => resolve(Buffer.concat(chunks)))
+      res.on('error', reject)
+    })
+  }
+  const response = () => {
+    const res = new PassThrough()
+    res.statusCode = 0
+    res.headers = {}
+    res.writeHead = function writeHead(status, headers) {
+      this.statusCode = status
+      this.headers = headers ?? {}
+      return this
+    }
+    return res
+  }
+
+  const ranged = response()
+  const rangedBody = collect(ranged)
+  await handler(nodeRequest({ headers: { range: 'bytes=10-19' } }), ranged)
+  assert.equal(ranged.statusCode, 206)
+  assert.equal(ranged.headers['content-range'], 'bytes 10-19/100')
+  assert.equal(ranged.headers['content-length'], 10)
+  assert.deepEqual(await rangedBody, bytes.subarray(10, 20))
+
+  const head = response()
+  const headBody = collect(head)
+  await handler(nodeRequest({ method: 'HEAD', headers: { range: 'bytes=-10' } }), head)
+  assert.equal(head.statusCode, 206)
+  assert.equal(head.headers['content-range'], 'bytes 90-99/100')
+  assert.equal(head.headers['content-length'], 10)
+  assert.equal((await headBody).length, 0)
+
+  const unsatisfiable = response()
+  const unsatisfiableBody = collect(unsatisfiable)
+  await handler(nodeRequest({ headers: { range: 'bytes=200-' } }), unsatisfiable)
+  assert.equal(unsatisfiable.statusCode, 416)
+  assert.equal(unsatisfiable.headers['content-range'], 'bytes */100')
+  assert.equal((await unsatisfiableBody).length, 0)
+
+  const full = response()
+  const fullBody = collect(full)
+  await handler(nodeRequest(), full)
+  assert.equal(full.statusCode, 200)
+  assert.equal(full.headers['content-length'], 100)
+  assert.deepEqual(await fullBody, bytes)
 })
