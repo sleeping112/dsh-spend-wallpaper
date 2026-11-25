@@ -8,6 +8,18 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const source = fs.readFileSync(path.join(root, 'lib', 'client.js'), 'utf8')
 
+/** A NodeList-shaped result: iterable and array-like, but without Array#map. */
+function nodeList(items) {
+  const list = {
+    length: items.length,
+    item: (index) => items[index] ?? null,
+    forEach: (fn, thisArg) => items.forEach(fn, thisArg),
+    [Symbol.iterator]: function* () { yield* items },
+  }
+  items.forEach((item, index) => { list[index] = item })
+  return list
+}
+
 class Element {
   constructor(tag) {
     this.tagName = String(tag).toUpperCase()
@@ -42,7 +54,7 @@ class Element {
     if (sel.startsWith('style[')) return this.tagName === 'STYLE'
     return this.tagName === sel.toUpperCase()
   }
-  querySelectorAll(sel) { return this.allNodes().filter((n) => n !== this && n.matches(sel)) }
+  querySelectorAll(sel) { return nodeList(this.allNodes().filter((n) => n !== this && n.matches(sel))) }
   querySelector(sel) { return this.querySelectorAll(sel)[0] ?? null }
   getBoundingClientRect() {
     const left = Number.parseFloat(this.style.left || '900') || 900
@@ -82,7 +94,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
     createElement(tag) { const el = new Element(tag); elements.push(el); return el },
     getElementById(id) { return elements.find((el) => el.attributes.id === id) ?? null },
     querySelector(sel) { return elements.find((el) => el.matches(sel)) ?? null },
-    querySelectorAll(sel) { return elements.filter((el) => el.matches(sel)) },
+    querySelectorAll(sel) { return nodeList(elements.filter((el) => el.matches(sel))) },
     addEventListener() {}, removeEventListener() {},
   }
   const state = {
@@ -205,7 +217,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
 
   findButton('空碗').click()
   await flush()
-  const frames = layer.querySelectorAll('.dswp-frame').map((frame) => frame.src)
+  const frames = Array.from(layer.querySelectorAll('.dswp-frame'), (frame) => frame.src)
   assert.ok(frames.some((src) => src.endsWith('/s/4.webm')), 'preview uses the selected scene')
 
   // A custom video has no poster; static mode must fall back to a paused video
@@ -217,7 +229,7 @@ test('quick panel edits thresholds, previews scenes and has no pack/frame contro
   await flush()
   findButton('满汉全席').click()
   await flush()
-  const staticVideo = layer.querySelectorAll('video').find((video) => video.src.endsWith('/s/0.webm'))
+  const staticVideo = Array.from(layer.querySelectorAll('video')).find((video) => video.src.endsWith('/s/0.webm'))
   assert.ok(staticVideo, 'static preview of a posterless video still uses a video element')
 
   findButton('+').click()
